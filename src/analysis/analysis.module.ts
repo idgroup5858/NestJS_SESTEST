@@ -1,0 +1,15 @@
+import { Module } from '@nestjs/common';
+import { AnalysisService } from './analysis.service';
+import { AnalysisController } from './analysis.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Analysis } from './entities/analysis.entity';
+import { LaboratoryModule } from 'src/laboratory/laboratory.module';
+import { CompanyModule } from 'src/company/company.module';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Analysis]), LaboratoryModule,CompanyModule],
+  controllers: [AnalysisController],
+  providers: [AnalysisService],
+  exports:[AnalysisService]
+})
+export class AnalysisModule { }

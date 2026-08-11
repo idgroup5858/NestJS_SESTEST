@@ -1,0 +1,103 @@
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
+import { UserService } from './user.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { LoginDto } from './dto/login-user.dto';
+import { AuthGuard } from '@nestjs/passport';
+
+@Controller('user')
+export class UserController {
+  constructor(private readonly userService: UserService) { }
+
+  @Post("add")
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.userService.create(createUserDto);
+  }
+
+
+  @UseGuards(AuthGuard("jwt"))
+  @Get("getall")
+  findAll(@Req() req:any) {
+    //console.log(req.user);
+    
+    return this.userService.findAll();
+  }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Get("getfull")
+  findAllPagSearch(
+    @Query("page") page: string,
+    @Query("limit") limit: string,
+    @Query("search") search: string
+  ) {
+    return this.userService.findAllPagSearch(+page, +limit, search);
+  }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Get('getby/:id')
+  findOne(@Param('id') id: string) {
+    return this.userService.findOne(+id);
+  }
+
+
+  @UseGuards(AuthGuard("jwt"))
+  @Patch('update/:id')
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.update(+id, updateUserDto);
+  }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Delete('delete/:id')
+  remove(@Param('id') id: string) {
+    return this.userService.remove(+id);
+  }
+
+
+  //AUTH
+
+  @Post("login")
+  login(@Body() loginDto: LoginDto) {
+    return this.userService.login(loginDto);
+  }
+
+  @Post("verify")
+  verifyToken(@Body("token") accessToken: string) {
+    return this.userService.verifyToken(accessToken)
+  }
+
+  @Post("refresh")
+  refreshToken(@Body("refreshToken") refreshToken: string) {
+    return this.userService.refreshToken(refreshToken)
+  }
+}
+
+
+/*
+
+
+// controller'da
+@UseGuards(AuthGuard('jwt'), TenantGuard)
+@Get('getall')
+findAll() {
+  return this.userService.findAll();
+}
+
+// common/tenant.guard.ts
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
+
+@Injectable()
+export class TenantGuard implements CanActivate {
+  constructor(private cls: ClsService) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const companyId = this.cls.get('companyId');
+    if (!companyId) {
+      throw new UnauthorizedException('companyId topilmadi');
+    }
+    return true;
+  }
+}
+
+
+*/
