@@ -23,7 +23,7 @@ export class GlobalstorageService {
   async create(createGlobalstorageDto: CreateGlobalstorageDto) {
    
 
-    const { analysis_id,company_id, ...rest } = createGlobalstorageDto
+    const { analysis_id,baseanalysis_id, ...rest } = createGlobalstorageDto
 
     const globalstorage = this.globalstorageRepository.create({
       ...rest
@@ -34,11 +34,11 @@ export class GlobalstorageService {
       if (!analysis) throw new NotFoundException("Analysis not found");
       globalstorage.analysis = analysis
     }
-    if (company_id) {
-      const company = await this.companyService.findOne(company_id)
-      if (!company) throw new NotFoundException("Company not found");
-      globalstorage.company = company;
-    }
+    // if (baseanalysis_id) {
+    //   const company = await this.companyService.findOne(company_id)
+    //   if (!company) throw new NotFoundException("Company not found");
+    //   globalstorage.company = company;
+    // }
 
     return await this.globalstorageRepository.save(globalstorage);
   }
@@ -121,7 +121,7 @@ export class GlobalstorageService {
     await this.findOne(id);
 
     // DTO ichidan foreign_id va qolgan ma'lumotlarni ajratib olamiz
-    const { analysis_id,company_id, ...storageData } = updateGlobalstorageDto
+    const { analysis_id,baseanalysis_id, ...storageData } = updateGlobalstorageDto
 
     // preload() mavjud ma'lumotni yangi qiymatlar bilan qisman yangilaydi
     const globalstorage = await this.globalstorageRepository.preload({
@@ -138,10 +138,10 @@ export class GlobalstorageService {
       globalstorage.analysis = analysis;
     }
 
-     if (company_id) {
-      const company= await this.companyService.findOne(company_id);
-      globalstorage.company = company;
-    }
+    //  if (company_id) {
+    //   const company= await this.companyService.findOne(company_id);
+    //   globalstorage.company = company;
+    // }
 
     return await this.globalstorageRepository.save(globalstorage);
   }

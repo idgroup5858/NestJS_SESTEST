@@ -1,9 +1,12 @@
-import { IsNumber } from "class-validator";
+import { IsNumber, IsOptional } from "class-validator";
 
 export class CreateGlobalstorageDto {
+        @IsOptional()
         @IsNumber()
         analysis_id: number;
 
+        @IsOptional()
         @IsNumber()
-        company_id:number;
+        baseanalysis_id: number;
+        
 }

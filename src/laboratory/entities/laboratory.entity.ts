@@ -22,10 +22,10 @@ export class Laboratory {
 
 
 
-  @OneToMany(() => Analysis, analysis => analysis.laboratory)
+  @OneToMany(() => Analysis, analysis => analysis.laboratory,{cascade:true})
   analysis: Analysis[];
 
-
+  
 
   @ManyToOne(() => User, { onDelete: "SET NULL", nullable: true })
   @JoinColumn({ name: "lab_director_id" })

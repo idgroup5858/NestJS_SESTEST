@@ -17,6 +17,8 @@ import { CompanyModule } from './company/company.module';
 import { OnlinestorageModule } from './onlinestorage/onlinestorage.module';
 import { EventModule } from './event/event.module';
 import { GlobalstorageModule } from './globalstorage/globalstorage.module';
+import { BaselaboratoryModule } from './baselaboratory/baselaboratory.module';
+import { BaseanalysisModule } from './baseanalysis/baseanalysis.module';
 
 
 @Module({
@@ -41,7 +43,9 @@ import { GlobalstorageModule } from './globalstorage/globalstorage.module';
     CompanyModule,
     OnlinestorageModule,
     EventModule,
-    GlobalstorageModule,   
+    GlobalstorageModule,
+    BaselaboratoryModule,
+    BaseanalysisModule,   
   ],
   controllers: [AppController],
   providers: [AppService],
