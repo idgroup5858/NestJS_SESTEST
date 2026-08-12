@@ -6,13 +6,15 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { ClsService } from 'nestjs-cls';
 import { CompanyService } from 'src/company/company.service';
+import { RegionService } from 'src/region/region.service';
 
 @Injectable()
 export class RoleService {
   constructor(
     @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>, // Bazaga ulanish
+    private readonly roleRepository: Repository<Role>,
     private companyService: CompanyService,
+    private readonly regionService:RegionService,
     readonly cls: ClsService,
   ) { }
 
@@ -41,7 +43,7 @@ export class RoleService {
 
   async createRoleWithCompany(createRoleDto: CreateRoleDto) {    
 
-    const {company_id,...rest}=createRoleDto
+    const {company_id,region_id,...rest}=createRoleDto
 
     if (company_id) {
       const company = await this.companyService.findOne(company_id)
@@ -60,6 +62,10 @@ export class RoleService {
       if (!company) throw new NotFoundException("Company not found");
       role.company = company
     }
+    if(region_id){
+      const region = await this.regionService.findOne(region_id);
+      role.region=region;
+    }
     return await this.roleRepository.save(role);
   }
 
@@ -69,15 +75,12 @@ export class RoleService {
     console.log("role  findall company_id");
     console.log(company_id);
 
-
-
     return await this.roleRepository.find({
       where: { company: { id: company_id } },
       relations: {
         company: true,
         user: true
       }
-
     });
   }
 
@@ -102,6 +105,8 @@ export class RoleService {
     }
     return role; // Haqiqiy Role obyektini qaytaradi
   }
+
+  
 
 
 

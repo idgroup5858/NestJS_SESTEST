@@ -6,24 +6,58 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Company } from './entities/company.entity'; // Yo'lni tekshiring
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { RegionService } from 'src/region/region.service';
 
 @Injectable()
 export class CompanyService {
   constructor(
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
+
+    private readonly regionService: RegionService
   ) { }
 
   // Yangi kompaniya yaratish
-  async create(createCompanyDto: CreateCompanyDto): Promise<Company> {
-    const company = this.companyRepository.create(createCompanyDto);
+  async create(createCompanyDto: CreateCompanyDto) {
+
+    const { region_id, district_id, ...dto } = createCompanyDto
+
+
+
+
+    const company = this.companyRepository.create({
+      ...dto
+    });
+    if (region_id) {
+      const region = await this.regionService.findOne(region_id)
+      company.region = region
+    }
+    if (district_id) {
+      const district = await this.regionService.findOneDistrict(district_id)
+      company.district = district
+    }
     return await this.companyRepository.save(company);
+
+
+
+    //try {
+    // } catch (error) {
+    //   console.error('Kompaniya ochishda xatolik:', error);
+
+    //   throw new HttpException(
+    //     'Kompaniyani saqlashda xatolik yuz berdi: ' + error.message,
+    //     HttpStatus.INTERNAL_SERVER_ERROR
+    //   );
+    // }
   }
 
   // Barcha kompaniyalarni olish
   async findAll(): Promise<Company[]> {
     return await this.companyRepository.find({
-      relations: { user:{role:true} }
+      relations: { 
+        user: { role: true },
+        region:true
+       }
     });
   }
 
@@ -41,12 +75,13 @@ export class CompanyService {
     const query = this.companyRepository.createQueryBuilder('company')
       // Agar kompaniyaga bog'langan boshqa jadvallar bo'lsa, shu yerda leftJoin qilinadi
       .leftJoinAndSelect('company.user', 'user')
+      .leftJoinAndSelect('company.region', 'region')
       .leftJoinAndSelect('user.role', 'role');
 
     // 3. Global qidiruv mantiqi (Nomi, Tavsifi yoki Manzili bo'yicha)
     if (search) {
       query.andWhere(
-        '(company.name ILIKE :search OR company.description ILIKE :search OR company.address ILIKE :search)',
+        '(company.name ILIKE :search OR company.description ILIKE :search OR company.address ILIKE :search  OR region.name ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -80,7 +115,7 @@ export class CompanyService {
   async findOne(id: number): Promise<Company> {
     const company = await this.companyRepository.findOne({
       where: { id },
-      relations: { user: {role:true} }
+      relations: { user: { role: true }, region: true }
     });
     if (!company) {
       throw new NotFoundException(`ID: ${id} bo'lgan kompaniya topilmadi`);
@@ -90,9 +125,28 @@ export class CompanyService {
 
   // Kompaniyani yangilash
   async update(id: number, updateCompanyDto: UpdateCompanyDto) {
-    const company = await this.findOne(id);
-    const updatedCompany = this.companyRepository.merge(company, updateCompanyDto);
-    return await this.companyRepository.save(updatedCompany);
+    const { region_id, district_id, ...dto } = updateCompanyDto
+    await this.findOne(id);
+    //const updatedCompany = this.companyRepository.merge(company, dto);
+    const company = await this.companyRepository.preload({
+      id,
+      ...dto
+    })
+    if(!company){
+      throw new ConflictException("saqlashda xatolik")
+    }
+
+    if (region_id) {
+      const region = await this.regionService.findOne(region_id)
+      company.region = region
+    }
+    if (district_id) {
+      const district = await this.regionService.findOneDistrict(district_id)
+      company.district = district
+    }
+
+
+    return await this.companyRepository.save(company);
   }
 
   // Kompaniyani o'chirish

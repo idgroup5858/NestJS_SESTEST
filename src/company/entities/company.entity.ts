@@ -1,5 +1,7 @@
+import { District } from "src/region/entities/district.entity";
+import { Region } from "src/region/entities/region.entity";
 import { User } from "src/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 
 @Entity()
@@ -30,6 +32,14 @@ export class Company {
 
     @OneToMany(() => User, user => user.company)
     user: User[]
+
+
+    @ManyToOne(()=> Region,{nullable:true})
+    region:Region;
+
+    @ManyToOne(()=> District,{nullable:true})
+    district:District|null;
+ 
 
 
 

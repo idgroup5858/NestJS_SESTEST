@@ -20,12 +20,9 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     readonly userRepository: Repository<User>,
-
-
     private readonly jwtService: JwtService,
     private roleService: RoleService,
     private companyService: CompanyService,
-
     readonly cls: ClsService,
 
 
@@ -55,12 +52,14 @@ export class UserService {
 
     //2. Agar role_id kelgan bo'lsa, rolni tekshirib keyin biriktiramiz
     if (role_id) {
-      const foundRole = await this.roleService.findOneCompany(role_id,company_id);
+      const foundRole = await this.roleService.findOneCompany(role_id, company_id);
       if (!foundRole) {
         throw new NotFoundException("Role not found"); // Rol topilmasa xato qaytarish yaxshi amaliyot
       }
       user.role = foundRole;
     }
+
+
 
     await this.userRepository.save(user);
     return user;
@@ -70,10 +69,10 @@ export class UserService {
   async findAll() {
     const company_id = this.cls.get<number>('company_id');
     return this.userRepository.find({
-      where:{company:{id:company_id}},
+      where: { company: { id: company_id } },
       relations: {
         role: true,
-        company:true
+        company: true
       }
     });
   }
@@ -98,7 +97,7 @@ export class UserService {
     // .leftJoinAndSelect('items.product', 'product')
     // .leftJoinAndSelect('sale.customer', 'customer');
 
-    if(company_id){
+    if (company_id) {
       query.where('user.company_id = :company_id', { company_id: company_id });
     }
 
@@ -136,7 +135,7 @@ export class UserService {
       {
         where: {
           id: id,
-          company:{id:company_id}
+          company: { id: company_id }
         },
         // relations: [
 
@@ -154,7 +153,7 @@ export class UserService {
 
 
   async findOneForSocket(id: number) {
-   
+
     const checkUser = await this.userRepository.findOne(
       {
         where: { id: id },
@@ -195,7 +194,7 @@ export class UserService {
     if (!user) throw new NotFoundException();
 
     if (role_id) {
-      const foundRole = await this.roleService.findOneCompany(role_id,company_id);
+      const foundRole = await this.roleService.findOneCompany(role_id, company_id);
       if (!foundRole) {
         throw new NotFoundException("Role not found"); // Rol topilmasa xato qaytarish yaxshi amaliyot
       }
@@ -227,7 +226,7 @@ export class UserService {
       where: {
         email: loginDto.email,
       },
-      relations:{company:true,role:true}
+      relations: { company: true, role: {region:true} }
     });
 
     if (!user) throw new NotFoundException("User not found");

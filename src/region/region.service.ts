@@ -20,7 +20,8 @@ export class RegionService {
     return await this.regionRepository.find({
       order: { id: 'ASC' }, // Hududlarni ID tartibi bo'yicha tartiblaymiz
       relations:{
-        district:true
+        district:true,
+        company:true
       }
     });
   }
@@ -40,7 +41,8 @@ export class RegionService {
     const region = await this.regionRepository.findOne({
       where:{ id},
       relations:{
-        district:true
+        district:true,
+        company:true
       } 
       });
     if (!region) {

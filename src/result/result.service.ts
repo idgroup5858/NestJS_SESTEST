@@ -10,8 +10,7 @@ import { User } from 'src/user/entities/user.entity';
 import { UpdateResultDto } from './dto/update-result.dto';
 import { CompanyService } from 'src/company/company.service';
 import { ClsService } from 'nestjs-cls';
-import { LaboratoryService } from 'src/laboratory/laboratory.service';
-import { AnalysisService } from 'src/analysis/analysis.service';
+
 
 @Injectable()
 export class ResultService {

@@ -31,8 +31,7 @@ export class Patient {
     company: Company;
 
 
-    @Column({ nullable: true })
-    passport_number: string;
+    
 
     @Column({ nullable: true })
     street: string;

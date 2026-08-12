@@ -112,8 +112,7 @@ export class PatientService {
 
       query.andWhere(
         `patient.first_name ILIKE :search OR 
-      patient.last_name ILIKE :search OR 
-      patient.passport_number ILIKE :search OR
+      patient.last_name ILIKE :search OR       
       patient.phone ILIKE :search OR
       CONCAT(patient.last_name, ' ', patient.first_name) ILIKE :search OR
       CAST(patient.id AS TEXT) LIKE :exactSearch OR
