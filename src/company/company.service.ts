@@ -54,10 +54,11 @@ export class CompanyService {
   // Barcha kompaniyalarni olish
   async findAll(): Promise<Company[]> {
     return await this.companyRepository.find({
-      relations: { 
+      relations: {
         user: { role: true },
-        region:true
-       }
+        region: true,
+        subscription: true
+      }
     });
   }
 
@@ -75,6 +76,7 @@ export class CompanyService {
     const query = this.companyRepository.createQueryBuilder('company')
       // Agar kompaniyaga bog'langan boshqa jadvallar bo'lsa, shu yerda leftJoin qilinadi
       .leftJoinAndSelect('company.user', 'user')
+      .leftJoinAndSelect('company.subscription', 'subscription')
       .leftJoinAndSelect('company.region', 'region')
       .leftJoinAndSelect('user.role', 'role');
 
@@ -115,7 +117,11 @@ export class CompanyService {
   async findOne(id: number): Promise<Company> {
     const company = await this.companyRepository.findOne({
       where: { id },
-      relations: { user: { role: true }, region: true }
+      relations: {
+        user: { role: true }, 
+        region: true,
+        subscription: true
+      }
     });
     if (!company) {
       throw new NotFoundException(`ID: ${id} bo'lgan kompaniya topilmadi`);
@@ -132,7 +138,7 @@ export class CompanyService {
       id,
       ...dto
     })
-    if(!company){
+    if (!company) {
       throw new ConflictException("saqlashda xatolik")
     }
 
