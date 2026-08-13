@@ -38,7 +38,7 @@ export class OrderService {
     private companyService: CompanyService,
 
     readonly cls: ClsService,
-    readonly eventGateway:EventGateway
+    readonly eventGateway: EventGateway
 
   ) { }
 
@@ -119,7 +119,7 @@ export class OrderService {
 
   async updateItemStatus(item_id: number, status: string): Promise<OrderItem> {
     console.log("this is");
-    
+
     const item = await this.orderItemRepository.findOne({
       where: { id: item_id },
       relations: {
@@ -172,7 +172,7 @@ export class OrderService {
   // TO'LOV statusini yangilash
   // ================================
   async updatePaymentStatus(order_id: number, status: string): Promise<Order> {
-    
+
     const company_id = this.cls.get<number>('company_id');
     console.log("order updatePaymentStatus company_id");
     console.log(company_id);
@@ -186,11 +186,11 @@ export class OrderService {
 
     const result = await this.orderRepository.save(order);
     const phoneNumber = result.patient?.phone ? result.patient?.phone : null;
-       
-    if(phoneNumber){
-      this.eventGateway.sendToSpecificCompany(company_id,phoneNumber,null,"Tolov qabul qilindi axir !");
+
+    if (phoneNumber) {
+      this.eventGateway.sendToSpecificCompany(company_id, phoneNumber, null, "Tolov qabul qilindi axir !");
     }
-    
+
     return result;
   }
 
@@ -223,9 +223,9 @@ export class OrderService {
     const company_id = this.cls.get<number>('company_id');
     console.log("order findall company_id");
     console.log(company_id);
-    
+
     return this.orderRepository.find({
-      where:{company:{id:company_id}},
+      where: { company: { id: company_id } },
       relations: {
         items: {
           analysis: true,
@@ -248,7 +248,7 @@ export class OrderService {
     status?: string,
   ) {
 
-     const company_id = this.cls.get<number>('company_id');
+    const company_id = this.cls.get<number>('company_id');
 
     page = page > 0 ? page : 1;
     limit = limit > 0 ? limit : 10;
@@ -354,7 +354,6 @@ export class OrderService {
   }
 
 
-
   async findAllPagSearchByLabId(
     page: number,
     limit: number,
@@ -362,14 +361,11 @@ export class OrderService {
     status?: string,
     laboratory_id?: number
   ) {
-
     const company_id = this.cls.get<number>('company_id');
-    // Sahifalash qiymatlarini tekshirish va default o'rnatish
     const currentPage = page > 0 ? Number(page) : 1;
     const currentLimit = limit > 0 ? Number(limit) : 10;
     const skip = (currentPage - 1) * currentLimit;
 
-    // QueryBuilder boshlash
     const query = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('items.analysis', 'analysis')
@@ -378,12 +374,24 @@ export class OrderService {
       .leftJoinAndSelect('order.patient', 'patient')
       .leftJoinAndSelect('order.district', 'district');
 
-    // Laboratoriya ID mavjud bo'lsa filter qilish
-    if (laboratory_id) {
-      query.where('laboratory.id = :laboratory_id', { laboratory_id: Number(laboratory_id) });
+    // company_id har doim majburiy filtr sifatida boshida qo'yiladi
+    if (company_id) {
+      query.where('order.company_id = :company_id', { company_id });
     }
 
-    // Qidiruv — bemor ismi, manzil yoki tavsif bo'yicha
+    // Laboratoriya bo'yicha filtr — EXISTS orqali,
+    // shunda order'ning BOSHQA item'lari ham massivdan tushib qolmaydi
+    if (laboratory_id) {
+      query.andWhere(
+        `EXISTS (
+        SELECT 1 FROM order_item oi
+        WHERE oi."orderId" = order.id
+        AND oi."laboratoryId" = :laboratory_id
+      )`,
+        { laboratory_id: Number(laboratory_id) },
+      );
+    }
+
     if (search) {
       query.andWhere(
         '(patient.first_name ILIKE :search OR patient.last_name ILIKE :search OR order.street ILIKE :search OR order.description ILIKE :search)',
@@ -391,23 +399,16 @@ export class OrderService {
       );
     }
 
-    // Status bo'yicha filtr
     if (status) {
       query.andWhere('order.status = :status', { status });
     }
 
-    if (company_id) {
-      query.where('order.company_id = :company_id', { company_id: company_id });
-    }
-
-    // Tartiblash, sahifalash va natijani olish (.offset va .limit xatolikni oldini oladi)
     const [data, total] = await query
       .orderBy('order.createdAt', 'DESC')
       .offset(skip)
       .limit(currentLimit)
       .getManyAndCount();
 
-    // Natijani qaytarish
     return {
       meta: {
         total,
@@ -420,15 +421,82 @@ export class OrderService {
   }
 
 
+
+  // async findAllPagSearchByLabId(
+  //   page: number,
+  //   limit: number,
+  //   search?: string,
+  //   status?: string,
+  //   laboratory_id?: number
+  // ) {
+
+  //   const company_id = this.cls.get<number>('company_id');
+  //   // Sahifalash qiymatlarini tekshirish va default o'rnatish
+  //   const currentPage = page > 0 ? Number(page) : 1;
+  //   const currentLimit = limit > 0 ? Number(limit) : 10;
+  //   const skip = (currentPage - 1) * currentLimit;
+
+  //   // QueryBuilder boshlash
+  //   const query = this.orderRepository.createQueryBuilder('order')
+  //     .leftJoinAndSelect('order.items', 'items')
+  //     .leftJoinAndSelect('items.analysis', 'analysis')
+  //     .leftJoinAndSelect('items.laboratory', 'laboratory')
+  //     .leftJoinAndSelect('order.owner', 'owner')
+  //     .leftJoinAndSelect('order.patient', 'patient')
+  //     .leftJoinAndSelect('order.district', 'district');
+
+  //   // Laboratoriya ID mavjud bo'lsa filter qilish
+  //   if (laboratory_id) {
+  //     query.where('laboratory.id = :laboratory_id', { laboratory_id: Number(laboratory_id) });
+  //   }
+
+  //   // Qidiruv — bemor ismi, manzil yoki tavsif bo'yicha
+  //   if (search) {
+  //     query.andWhere(
+  //       '(patient.first_name ILIKE :search OR patient.last_name ILIKE :search OR order.street ILIKE :search OR order.description ILIKE :search)',
+  //       { search: `%${search}%` },
+  //     );
+  //   }
+
+  //   // Status bo'yicha filtr
+  //   if (status) {
+  //     query.andWhere('order.status = :status', { status });
+  //   }
+
+  //   if (company_id) {
+  //     query.where('order.company_id = :company_id', { company_id: company_id });
+  //   }
+
+  //   // Tartiblash, sahifalash va natijani olish (.offset va .limit xatolikni oldini oladi)
+  //   const [data, total] = await query
+  //     .orderBy('order.createdAt', 'DESC')
+  //     .offset(skip)
+  //     .limit(currentLimit)
+  //     .getManyAndCount();
+
+  //   // Natijani qaytarish
+  //   return {
+  //     meta: {
+  //       total,
+  //       page: currentPage,
+  //       limit: currentLimit,
+  //       totalPages: Math.ceil(total / currentLimit),
+  //     },
+  //     data,
+  //   };
+  // }
+
+
   async findOne(id: number) {
     const company_id = this.cls.get<number>('company_id');
     console.log("order findOne company_id");
     console.log(company_id);
 
     const order = await this.orderRepository.findOne({
-      where: { id,
-        company:{id:company_id}
-       },
+      where: {
+        id,
+        company: { id: company_id }
+      },
       relations: {
         items: {
           analysis: true,
@@ -450,7 +518,7 @@ export class OrderService {
   }
 
   async findOneWithOutToken(id: number) {
-    
+
     const order = await this.orderRepository.findOne({
       where: { id },
       relations: {
@@ -474,7 +542,7 @@ export class OrderService {
   }
 
   async update(id: number, dto: UpdateOrderDto): Promise<Order> {
-     const company_id = this.cls.get<number>('company_id');
+    const company_id = this.cls.get<number>('company_id');
     console.log("order update  company_id");
     const order = await this.findOne(id)
 
@@ -493,7 +561,7 @@ export class OrderService {
     if (dto.completed_sms !== undefined) order.completed_sms = dto.completed_sms;
     if (dto.result_link_sms !== undefined) {
       order.result_link_sms = dto.result_link_sms;
-      
+
     }
 
     // Relation maydonlarni yangilaymiz
@@ -536,9 +604,9 @@ export class OrderService {
 
     const result = await this.orderRepository.save(order);
     const phoneNumber = result.patient?.phone ? result.patient?.phone : null;
-       
-    if(phoneNumber && result.result_link_sms){
-      this.eventGateway.sendToSpecificCompany(company_id,phoneNumber,result.result_link_sms ? result.result_link_sms :null,"Tolov qabul qilindi axir !");
+
+    if (phoneNumber && result.result_link_sms) {
+      this.eventGateway.sendToSpecificCompany(company_id, phoneNumber, result.result_link_sms ? result.result_link_sms : null, "Tolov qabul qilindi axir !");
     }
 
     return result;

@@ -19,6 +19,8 @@ import { EventModule } from './event/event.module';
 import { GlobalstorageModule } from './globalstorage/globalstorage.module';
 import { BaselaboratoryModule } from './baselaboratory/baselaboratory.module';
 import { BaseanalysisModule } from './baseanalysis/baseanalysis.module';
+import { PlanModule } from './plan/plan.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 
 @Module({
@@ -45,7 +47,9 @@ import { BaseanalysisModule } from './baseanalysis/baseanalysis.module';
     EventModule,
     GlobalstorageModule,
     BaselaboratoryModule,
-    BaseanalysisModule,   
+    BaseanalysisModule,
+    PlanModule,
+    SubscriptionModule,   
   ],
   controllers: [AppController],
   providers: [AppService],

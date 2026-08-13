@@ -1,7 +1,9 @@
+
 import { District } from "src/region/entities/district.entity";
 import { Region } from "src/region/entities/region.entity";
+import { Subscription } from "src/subscription/entities/subscription.entity";
 import { User } from "src/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 
 @Entity()
@@ -23,10 +25,10 @@ export class Company {
     @Column()
     address: string
 
-    @Column({nullable:true})
+    @Column({ nullable: true })
     phone: string
 
-    @Column({default:true})
+    @Column({ default: true })
     active: boolean
 
 
@@ -34,12 +36,17 @@ export class Company {
     user: User[]
 
 
-    @ManyToOne(()=> Region,{nullable:true})
-    region:Region;
+    @ManyToOne(() => Region, { nullable: true })
+    region: Region;
 
-    @ManyToOne(()=> District,{nullable:true})
-    district:District|null;
- 
+    @ManyToOne(() => District, { nullable: true })
+    district: District | null;
+
+
+    @OneToOne(() => Subscription, (subscription) => subscription.company,{nullable:true})
+    @JoinColumn({ name: 'subscription_id' })
+    subscription: Subscription;
+
 
 
 

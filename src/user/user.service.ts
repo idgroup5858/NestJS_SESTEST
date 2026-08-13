@@ -226,7 +226,7 @@ export class UserService {
       where: {
         email: loginDto.email,
       },
-      relations: { company: true, role: {region:true} }
+      relations: { company: {subscription:true}, role: {region:true} }
     });
 
     if (!user) throw new NotFoundException("User not found");
