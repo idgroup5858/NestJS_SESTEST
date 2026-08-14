@@ -29,8 +29,6 @@ export class Patient {
     @ManyToOne(() => Company)
     @JoinColumn({ name: "company_id" })
     company: Company;
-
-
     
 
     @Column({ nullable: true })

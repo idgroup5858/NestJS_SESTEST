@@ -43,7 +43,7 @@ export class Company {
     district: District | null;
 
 
-    @OneToOne(() => Subscription, (subscription) => subscription.company,{nullable:true})
+    @OneToOne(() => Subscription, (subscription) => subscription.company,{nullable:true,onDelete:"SET NULL"})
     @JoinColumn({ name: 'subscription_id' })
     subscription: Subscription;
 

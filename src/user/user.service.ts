@@ -71,7 +71,7 @@ export class UserService {
     return this.userRepository.find({
       where: { company: { id: company_id } },
       relations: {
-        role: true,
+        role: {region:true},
         company: true
       }
     });
