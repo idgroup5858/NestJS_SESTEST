@@ -57,7 +57,7 @@ export class CompanyService {
       relations: {
         user: { role: true },
         region: true,
-        district:true,
+        district:true, // shueyrda district qoshildi
         subscription: true
       }
     });
