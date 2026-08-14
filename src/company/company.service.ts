@@ -57,6 +57,7 @@ export class CompanyService {
       relations: {
         user: { role: true },
         region: true,
+        district:true,
         subscription: true
       }
     });
@@ -78,6 +79,7 @@ export class CompanyService {
       .leftJoinAndSelect('company.user', 'user')
       .leftJoinAndSelect('company.subscription', 'subscription')
       .leftJoinAndSelect('company.region', 'region')
+      .leftJoinAndSelect('company.district', 'district')
       .leftJoinAndSelect('user.role', 'role');
 
     // 3. Global qidiruv mantiqi (Nomi, Tavsifi yoki Manzili bo'yicha)
@@ -119,7 +121,8 @@ export class CompanyService {
       where: { id },
       relations: {
         user: { role: true }, 
-        region: true,
+        region:true,
+        district:true,
         subscription: true
       }
     });
