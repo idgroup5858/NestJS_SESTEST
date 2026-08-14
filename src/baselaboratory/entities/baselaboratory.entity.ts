@@ -18,8 +18,4 @@ export class Baselaboratory {
   @OneToMany(() => Baseanalysis, baseanalysis => baseanalysis.baselaboratory)
   baseanalysis: Baseanalysis[];
 
-
-
-
-
 }

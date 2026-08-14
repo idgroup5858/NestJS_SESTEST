@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './entities/jwt.strategy';
 import { RoleModule } from 'src/role/role.module';
 import { CompanyModule } from 'src/company/company.module';
+import { RegionModule } from 'src/region/region.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User]),

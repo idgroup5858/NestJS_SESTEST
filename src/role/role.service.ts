@@ -43,7 +43,7 @@ export class RoleService {
 
   async createRoleWithCompany(createRoleDto: CreateRoleDto) {    
 
-    const {company_id,region_id,...rest}=createRoleDto
+    const {company_id,...rest}=createRoleDto
 
     if (company_id) {
       const company = await this.companyService.findOne(company_id)
@@ -62,10 +62,7 @@ export class RoleService {
       if (!company) throw new NotFoundException("Company not found");
       role.company = company
     }
-    if(region_id){
-      const region = await this.regionService.findOne(region_id);
-      role.region=region;
-    }
+    
     return await this.roleRepository.save(role);
   }
 

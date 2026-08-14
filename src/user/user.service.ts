@@ -71,8 +71,9 @@ export class UserService {
     return this.userRepository.find({
       where: { company: { id: company_id } },
       relations: {
-        role: {region:true},
-        company: true
+        role: true,
+        company: true,
+        region:true
       }
     });
   }
@@ -88,6 +89,7 @@ export class UserService {
     const skip = (page - 1) * limit;
 
     const query = this.userRepository.createQueryBuilder('user')
+     .leftJoinAndSelect('user.region', 'region')
     // .leftJoinAndSelect('user.subjects', 'subjects')
     // .leftJoinAndSelect('user.classs', 'classs')
     // .leftJoinAndSelect('sale.items', 'items')
@@ -137,6 +139,9 @@ export class UserService {
           id: id,
           company: { id: company_id }
         },
+        relations:{
+          region:true
+        }
         // relations: [
 
         //   'userSubjects',          // 1. Ustozning hamma fan birikmalarini oladi
@@ -226,7 +231,7 @@ export class UserService {
       where: {
         email: loginDto.email,
       },
-      relations: { company: {subscription:true}, role: {region:true} }
+      relations: { company: {subscription:true}, role: true }
     });
 
     if (!user) throw new NotFoundException("User not found");

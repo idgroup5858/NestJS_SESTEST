@@ -20,9 +20,6 @@ export class Role {
     company: Company;
 
 
-    @ManyToOne(() => Region,{nullable:true})
-    @JoinColumn({ name: "region_id" })
-    region: Region;
 
     @CreateDateColumn()
     createdAt: Date;

@@ -1,6 +1,7 @@
 import { Company } from "src/company/entities/company.entity";
+import { Region } from "src/region/entities/region.entity";
 import { Role } from "src/role/entities/role.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class User {
@@ -27,5 +28,10 @@ export class User {
     @JoinColumn({ name: 'role_id' })
     @ManyToOne(()=>Role, role=>role.user,{onDelete:"SET NULL",nullable:true}) //cascade: true — Bu Saqlash (Insert/Update)  //faqat onDeleteUchun //CASCADE (Zanjirli o'chirish) //NO ACTION (Standart holat) //o'chirishni taqiqlaydi //SET DEFAULT //foydalanuvchining roli jadvaldagi standart (default) qiymatga qaytadi.
     role:Role;
+
+
+    @OneToMany(()=>Region,region=>region.user,{nullable:true})
+    @JoinColumn({name:"region_control_id"})
+    region:Region[];
 
 }

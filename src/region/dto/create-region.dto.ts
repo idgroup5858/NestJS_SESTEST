@@ -1,3 +1,6 @@
 export class CreateRegionDto {
-    name:string
+    name:string;
+
+    user_region_id:number;
+
 }
