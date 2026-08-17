@@ -15,7 +15,7 @@ export class Baselaboratory {
 
   @CreateDateColumn()
   createdAt: Date;
-  @OneToMany(() => Baseanalysis, baseanalysis => baseanalysis.baselaboratory)
+  @OneToMany(() => Baseanalysis, baseanalysis => baseanalysis.baselaboratory,{cascade:true})
   baseanalysis: Baseanalysis[];
 
 }
