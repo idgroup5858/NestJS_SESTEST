@@ -27,7 +27,7 @@ export class LaboratoryService {
     console.log("laboratory create company_id");
     console.log(cls_company_id);
 
-    const target_company_id = cls_company_id || createLaboratoryDto.company_id;
+    const target_company_id = createLaboratoryDto.company_id ? createLaboratoryDto.company_id : cls_company_id;
 
     const { lab_director_id, company_id, ...rest } = createLaboratoryDto;
 
@@ -48,7 +48,7 @@ export class LaboratoryService {
     return await this.laboratoryRepository.save(laboratory);
   }
 
-  async findAll(company_id?:number) {
+  async findAll(company_id?: number) {
     const cls_company_id = this.cls.get<number>('company_id');
     const target_company_id = cls_company_id || company_id;
     console.log("laboratory findall company_id");
@@ -65,7 +65,7 @@ export class LaboratoryService {
 
   async findAllPagSearch(page: number, limit: number, search?: string, company_id?: number) {
     // 1. Qaysi company_id ustuvorligini aniqlaymiz (CLS birinchi o'rinda)
-    const target_company_id = this.cls.get<number>('company_id') || company_id;
+    const target_company_id = company_id ? company_id : this.cls.get<number>('company_id');
 
     // 2. Pagination qiymatlarini normallashtiramiz
     const validPage = page > 0 ? page : 1;
@@ -109,11 +109,11 @@ export class LaboratoryService {
 
 
   // 3. ID bo'yicha bitta laboratoriyani topish
-  async findOne(id: number,company_id?:number) {
+  async findOne(id: number, company_id?: number) {
 
     const cls_company_id = this.cls.get<number>('company_id');
-     const target_company_id = cls_company_id || company_id;
-    console.log("laboratory findOne company_id");
+    const target_company_id = company_id ? company_id : cls_company_id;
+      console.log("laboratory findOne company_id");
     console.log(cls_company_id);
 
 
@@ -141,7 +141,7 @@ export class LaboratoryService {
 
   async update(id: number, updateLaboratoryDto: UpdateLaboratoryDto) {
 
-    const laboratoryCheck = await this.findOne(id,updateLaboratoryDto.company_id);
+    const laboratoryCheck = await this.findOne(id, updateLaboratoryDto.company_id);
 
     const { lab_director_id, ...rest } = updateLaboratoryDto;
 
@@ -180,8 +180,8 @@ export class LaboratoryService {
   //   }
 
 
-  async remove(id: number,company_id?:number) {
-    const laboratory = await this.findOne(id,company_id);
+  async remove(id: number, company_id?: number) {
+    const laboratory = await this.findOne(id, company_id);
     await this.laboratoryRepository.remove(laboratory);
 
 

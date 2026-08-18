@@ -26,7 +26,7 @@ export class OnlinestorageService {
     console.log("storage create company_id");
     console.log(cls_company_id);
 
-    const target_company_id = cls_company_id || createOnlinestorageDto.company_id;
+    const target_company_id = createOnlinestorageDto.company_id? createOnlinestorageDto.company_id :cls_company_id;
 
     const { analysis_id, company_id, ...rest } = createOnlinestorageDto
 
@@ -41,12 +41,8 @@ export class OnlinestorageService {
       if (!analysis) throw new NotFoundException("Analysis not found");
       onlinestorage.analysis = analysis
     }
-    if (createOnlinestorageDto.company_id) {
-      const company = await this.companyService.findOne(createOnlinestorageDto.company_id)
-      if (!company) throw new NotFoundException("Company not found");
-      onlinestorage.company = company;
-    }else if (cls_company_id) {
-      const company = await this.companyService.findOne(cls_company_id)
+    if (target_company_id) {
+      const company = await this.companyService.findOne(target_company_id)
       if (!company) throw new NotFoundException("Company not found");
       onlinestorage.company = company;
     }

@@ -26,7 +26,7 @@ export class AnalysisService {
     console.log("analysis create company_id");
     console.log(cls_company_id);
 
-    const target_company_id = cls_company_id || createAnalysisDto.company_id;
+    const target_company_id = createAnalysisDto.company_id ? createAnalysisDto.company_id : cls_company_id;
 
 
 
@@ -58,7 +58,7 @@ export class AnalysisService {
     console.log("analysis findall company_id");
     console.log(cls_company_id);
 
-     const target_company_id = cls_company_id || company_id;
+     const target_company_id = company_id ? company_id : cls_company_id;
 
 
     return await this.analysisRepository.find({
@@ -73,7 +73,9 @@ export class AnalysisService {
 
 async findAllPagSearch(page: number, limit: number, search?: string, company_id?: number) {
   // 1. Qaysi company_id ustuvorligini aniqlaymiz (CLS birinchi o'rinda)
-  const target_company_id = this.cls.get<number>('company_id') || company_id;
+  const cls_company_id = this.cls.get<number>('company_id');
+
+    const target_company_id = company_id ? company_id : cls_company_id;
 
   // 2. Pagination qiymatlarini normallashtiramiz
   const validPage = page > 0 ? page : 1;
@@ -128,7 +130,7 @@ async findAllPagSearch(page: number, limit: number, search?: string, company_id?
     console.log("analysis findone company_id");
     console.log(cls_company_id);
 
-    const target_company_id = cls_company_id || company_id;
+    const target_company_id = company_id ? company_id : cls_company_id;
 
     const analysis = await this.analysisRepository.findOne({
       where: {
