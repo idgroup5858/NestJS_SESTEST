@@ -41,8 +41,12 @@ export class OnlinestorageService {
       if (!analysis) throw new NotFoundException("Analysis not found");
       onlinestorage.analysis = analysis
     }
-    if (target_company_id) {
-      const company = await this.companyService.findOne(target_company_id)
+    if (createOnlinestorageDto.company_id) {
+      const company = await this.companyService.findOne(createOnlinestorageDto.company_id)
+      if (!company) throw new NotFoundException("Company not found");
+      onlinestorage.company = company;
+    }else if (cls_company_id) {
+      const company = await this.companyService.findOne(cls_company_id)
       if (!company) throw new NotFoundException("Company not found");
       onlinestorage.company = company;
     }
