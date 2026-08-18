@@ -18,8 +18,10 @@ export class AnalysisController {
   // 2. Barcha tahlillarni oddiy ro'yxat shaklida olish
   @UseGuards(AuthGuard("jwt"))
   @Get("getall")
-  findAll() {
-    return this.analysisService.findAll();
+  findAll(
+    @Query("company_id") company_id?: string
+  ) {
+    return this.analysisService.findAll(company_id != null ? +company_id : undefined);
   }
 
   // 3. Paginatsiya va qidiruv (Search) bilan birga olish
@@ -28,16 +30,20 @@ export class AnalysisController {
   findAllPagSearch(
     @Query("page") page: string,
     @Query("limit") limit: string,
-    @Query("search") search: string
+    @Query("search") search?: string,
+    @Query("company_id") company_id?: string
   ) {
-    return this.analysisService.findAllPagSearch(+page, +limit, search);
+    return this.analysisService.findAllPagSearch(+page, +limit, search, company_id != null ? +company_id : undefined);
   }
 
   // 4. ID bo'yicha bitta tahlilni olish
   @UseGuards(AuthGuard("jwt"))
   @Get('getby/:id')
-  findOne(@Param('id') id: string) {
-    return this.analysisService.findOne(+id);
+  findOne(
+    @Param('id') id: string,
+    @Query("company_id") company_id?: string
+  ) {
+    return this.analysisService.findOne(+id,company_id != null ? +company_id : undefined);
   }
 
   // 5. Tahlilni yangilash
@@ -50,7 +56,11 @@ export class AnalysisController {
   // 6. Tahlilni o'chirish
   @UseGuards(AuthGuard("jwt"))
   @Delete('delete/:id')
-  remove(@Param('id') id: string) {
-    return this.analysisService.remove(+id);
+  remove(
+    @Param('id') id: string,
+    @Query("company_id") company_id?: string
+  
+  ) {
+    return this.analysisService.remove(+id,company_id != null ? +company_id : undefined);
   }
 }

@@ -6,7 +6,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 @Controller('onlinestorage')
 export class OnlinestorageController {
-  constructor(private readonly onlinestorageService: OnlinestorageService) {}
+  constructor(private readonly onlinestorageService: OnlinestorageService) { }
 
   @UseGuards(AuthGuard("jwt"))
   @Post("add")
@@ -16,27 +16,33 @@ export class OnlinestorageController {
 
   @UseGuards(AuthGuard("jwt"))
   @Get("getall")
-  findAll() {
-    return this.onlinestorageService.findAll();
+  findAll(
+    @Query("company_id") company_id?: string
+  ) {
+    return this.onlinestorageService.findAll(company_id != null ? +company_id : undefined);
   }
 
   @UseGuards(AuthGuard("jwt"))
-    @Get("getfull")
-    findAllPagSearch(
-      @Query("page") page: string,
-      @Query("limit") limit: string,
-      @Query("search") search: string
-    ) {
-      return this.onlinestorageService.findAllPagSearch(+page, +limit, search);
-    }
+  @Get("getfull")
+  findAllPagSearch(
+    @Query("page") page: string,
+    @Query("limit") limit: string,
+    @Query("search") search: string,
+    @Query("company_id") company_id?: string
+  ) {
+    return this.onlinestorageService.findAllPagSearch(+page, +limit, search, company_id != null ? +company_id : undefined);
+  }
 
   @UseGuards(AuthGuard("jwt"))
   @Get('getby/:id')
-  findOne(@Param('id') id: string) {
-    return this.onlinestorageService.findOne(+id);
+  findOne(
+    @Param('id') id: string,
+    @Query("company_id") company_id?: string
+  ) {
+    return this.onlinestorageService.findOne(+id,company_id != null ? +company_id : undefined);
   }
 
-  
+
   @Get('getbytwo/:id')
   findOneWithOutToken(@Param('id') id: string) {
     return this.onlinestorageService.findOneWithOutToken(+id);
@@ -50,7 +56,10 @@ export class OnlinestorageController {
 
   @UseGuards(AuthGuard("jwt"))
   @Delete('delete/:id')
-  remove(@Param('id') id: string) {
-    return this.onlinestorageService.remove(+id);
+  remove(
+    @Param('id') id: string,
+    @Query("company_id") company_id?: string
+  ) {
+    return this.onlinestorageService.remove(+id, company_id != null ? +company_id : undefined);
   }
 }

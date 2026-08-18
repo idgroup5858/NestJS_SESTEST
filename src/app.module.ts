@@ -21,6 +21,7 @@ import { BaselaboratoryModule } from './baselaboratory/baselaboratory.module';
 import { BaseanalysisModule } from './baseanalysis/baseanalysis.module';
 import { PlanModule } from './plan/plan.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { HistoryModule } from './history/history.module';
 
 
 @Module({
@@ -49,7 +50,8 @@ import { SubscriptionModule } from './subscription/subscription.module';
     BaselaboratoryModule,
     BaseanalysisModule,
     PlanModule,
-    SubscriptionModule,   
+    SubscriptionModule,
+    HistoryModule,   
   ],
   controllers: [AppController],
   providers: [AppService],

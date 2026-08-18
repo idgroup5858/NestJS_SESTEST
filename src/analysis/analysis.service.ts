@@ -22,12 +22,15 @@ export class AnalysisService {
 
   // 1. Yangi tahlil (analysis) yaratish
   async create(createAnalysisDto: CreateAnalysisDto) {
-    const company_id = this.cls.get<number>('company_id');
+    const cls_company_id = this.cls.get<number>('company_id');
     console.log("analysis create company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
+
+    const target_company_id = cls_company_id || createAnalysisDto.company_id;
 
 
-    await this.laboratoryService.findOne(createAnalysisDto.laboratory_id)
+
+    await this.laboratoryService.findOne(createAnalysisDto.laboratory_id,target_company_id)
 
     // const analysisCheck = await this.analysisRepository.findOne({
     //   where: { name: createAnalysisDto.name }
@@ -41,8 +44,8 @@ export class AnalysisService {
       laboratory: { id: createAnalysisDto.laboratory_id }
     });
 
-    if (company_id) {
-      const company = await this.companyService.findOne(company_id)
+    if (target_company_id) {
+      const company = await this.companyService.findOne(target_company_id)
       if (!company) throw new NotFoundException("Company not found");
       analysis.company = company
     }
@@ -50,90 +53,87 @@ export class AnalysisService {
   }
 
   // 2. Barcha tahlillarni olish
-  async findAll() {
-    const company_id = this.cls.get<number>('company_id');
+  async findAll(company_id?:number) {
+    const cls_company_id = this.cls.get<number>('company_id');
     console.log("analysis findall company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
+
+     const target_company_id = cls_company_id || company_id;
+
 
     return await this.analysisRepository.find({
-      where: { company: { id: company_id } },
+      where: { company: { id: target_company_id } },
       relations: {
         laboratory: { lab_director: true }
       }
     });
   }
 
-  async findAllPagSearch(page: number, limit: number, search?: string) {
+ 
 
+async findAllPagSearch(page: number, limit: number, search?: string, company_id?: number) {
+  // 1. Qaysi company_id ustuvorligini aniqlaymiz (CLS birinchi o'rinda)
+  const target_company_id = this.cls.get<number>('company_id') || company_id;
 
-    const company_id = this.cls.get<number>('company_id');
+  // 2. Pagination qiymatlarini normallashtiramiz
+  const validPage = page > 0 ? page : 1;
+  const validLimit = limit > 0 ? limit : 10;
+  const skip = (validPage - 1) * validLimit;
 
-    page = page > 0 ? page : 1;
-    limit = limit > 0 ? limit : 10;
+  // 3. QueryBuilder ni yaratamiz va asosiy WHERE poydevorini qo'yamiz
+  const query = this.analysisRepository.createQueryBuilder('analysis')
+    .leftJoinAndSelect('analysis.laboratory', 'laboratory')
+    .where('1=1'); // Dinamik filtrlarni xavfsiz va chalkashliklarsiz ulash uchun
 
-    const skip = (page - 1) * limit;
-
-    const query = this.analysisRepository.createQueryBuilder('analysis')
-      .leftJoinAndSelect('analysis.laboratory', 'laboratory')
-    // .leftJoinAndSelect('user.classs', 'classs')
-    // .leftJoinAndSelect('sale.items', 'items')
-    // .leftJoinAndSelect('sale.payments', 'payments')
-    // .leftJoinAndSelect('sale.user', 'user')
-    // .leftJoinAndSelect('items.warehouse', 'warehouse')
-    // .leftJoinAndSelect('items.product', 'product')
-    // .leftJoinAndSelect('sale.customer', 'customer');
-
-    if (company_id) {
-      query.where('analysis.company_id = :company_id', { company_id: company_id });
-    }
-
-
-    if (search) {
-      query.andWhere(
-        new Brackets((qb) => {
-          qb.where('analysis.name ILIKE :search', { search: `%${search}%` })
-            .orWhere('analysis.shortname ILIKE :search', { search: `%${search}%` })
-            .orWhere('laboratory.name ILIKE :search', { search: `%${search}%` });
-        }),
-      );
-    }
-    // if (search) {
-    //   query.andWhere(
-    //     '(analysis.name ILIKE :search OR analysis.shortname ILIKE :search OR laboratory.name ILIKE :search)',  //LIKE MYSQL ILIKE POSTGRESQL
-    //     { search: `%${search}%` }
-    //   );
-    // }
-
-
-
-    const [data, total] = await query
-      .orderBy('analysis.id', 'DESC')
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-      data,
-    };
+  // 4. Company ID bo'yicha filtr (CLS yoki controllerdan kelgan)
+  if (target_company_id) {
+    query.andWhere('analysis.company_id = :target_company_id', { target_company_id });
   }
 
-  // 3. ID bo'yicha bitta tahlilni topish
-  async findOne(id: number) {
+  // 5. Brackets yordamida chuqurlashtirilgan qidiruv (Search)
+  if (search) {
+    query.andWhere(
+      new Brackets((qb) => {
+        qb.where('analysis.name ILIKE :search', { search: `%${search}%` })
+          .orWhere('analysis.shortname ILIKE :search', { search: `%${search}%` })
+          .orWhere('laboratory.name ILIKE :search', { search: `%${search}%` });
+      }),
+    );
+  }
 
-    const company_id = this.cls.get<number>('company_id');
+  // 6. Ma'lumotlarni bazadan olish
+  const [data, total] = await query
+    .orderBy('analysis.id', 'DESC')
+    .skip(skip)
+    .take(validLimit)
+    .getManyAndCount();
+
+  // 7. Standart pagination formatida qaytarish
+  return {
+    meta: {
+      total,
+      page: validPage,
+      limit: validLimit,
+      totalPages: Math.ceil(total / validLimit),
+    },
+    data,
+  };
+}
+
+
+  // 3. ID bo'yicha bitta tahlilni topish
+  async findOne(id: number,company_id?:number) {
+
+    const cls_company_id = this.cls.get<number>('company_id');
     console.log("analysis findone company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
+
+    const target_company_id = cls_company_id || company_id;
 
     const analysis = await this.analysisRepository.findOne({
       where: {
         id: id,
-        company: { id: company_id }
+        company: { id: target_company_id }
       },
       relations: {
         laboratory: true,
@@ -166,7 +166,7 @@ export class AnalysisService {
 
   // 4. Tahlil ma'lumotlarini yangilash
   async update(id: number, updateAnalysisDto: UpdateAnalysisDto) {
-    await this.findOne(id)
+    await this.findOne(id,updateAnalysisDto.company_id)
     const analysis = await this.analysisRepository.preload({
       id,
       ...updateAnalysisDto,
@@ -178,8 +178,8 @@ export class AnalysisService {
   }
 
   // 5. Tahlilni bazadan o'chirish va muvaffaqiyatli xabar qaytarish
-  async remove(id: number) {
-    const analysis = await this.findOne(id); // Avval borligini tekshiramiz
+  async remove(id: number,company_id?:number) {
+    const analysis = await this.findOne(id,company_id); // Avval borligini tekshiramiz
     await this.analysisRepository.remove(analysis); // O'chiramiz
 
     return {

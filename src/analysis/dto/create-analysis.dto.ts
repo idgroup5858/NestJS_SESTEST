@@ -8,4 +8,7 @@ export class CreateAnalysisDto {
 
     @IsString()
     name:string;
+
+
+    company_id?:number;
 }

@@ -16,8 +16,10 @@ export class LaboratoryController {
 
   @UseGuards(AuthGuard("jwt"))
   @Get("getall")
-  findAll() {
-    return this.laboratoryService.findAll();
+  findAll(
+    @Query("company_id") company_id?: string
+  ) {
+    return this.laboratoryService.findAll(company_id != null ? +company_id : undefined);
   }
 
   @UseGuards(AuthGuard("jwt"))
@@ -25,15 +27,19 @@ export class LaboratoryController {
   findAllPagSearch(
     @Query("page") page: string,
     @Query("limit") limit: string,
-    @Query("search") search: string
+    @Query("search") search?: string,
+    @Query("company_id") company_id?: string
   ) {
-    return this.laboratoryService.findAllPagSearch(+page, +limit, search);
+    return this.laboratoryService.findAllPagSearch(+page, +limit, search,company_id != null ? +company_id : undefined);
   }
 
   @UseGuards(AuthGuard("jwt"))
   @Get('getby/:id')
-  findOne(@Param('id') id: string) {
-    return this.laboratoryService.findOne(+id);
+  findOne(
+    @Param('id') id: string,
+    @Query("company_id") company_id?: string    
+  ) {
+    return this.laboratoryService.findOne(+id,company_id != null ? +company_id : undefined);
   }
 
   @UseGuards(AuthGuard("jwt"))
@@ -44,8 +50,11 @@ export class LaboratoryController {
 
   @UseGuards(AuthGuard("jwt"))
   @Delete('delete/:id')
-  remove(@Param('id') id: string) {
-    return this.laboratoryService.remove(+id);
+  remove(
+    @Param('id') id: string,
+    @Query("company_id") company_id?: string 
+  ) {
+    return this.laboratoryService.remove(+id,company_id != null ? +company_id : undefined);
   }
 
 

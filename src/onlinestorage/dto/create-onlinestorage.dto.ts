@@ -4,4 +4,6 @@ export class CreateOnlinestorageDto {
 
     @IsNumber()
     analysis_id:number;
+
+    company_id?:number
 }

@@ -23,11 +23,13 @@ export class LaboratoryService {
 
 
   async create(createLaboratoryDto: CreateLaboratoryDto) {
-    const company_id = this.cls.get<number>('company_id');
+    const cls_company_id = this.cls.get<number>('company_id');
     console.log("laboratory create company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
 
-    const { lab_director_id, ...rest } = createLaboratoryDto;
+    const target_company_id = cls_company_id || createLaboratoryDto.company_id;
+
+    const { lab_director_id, company_id, ...rest } = createLaboratoryDto;
 
     const laboratory = this.laboratoryRepository.create({
       ...rest
@@ -38,20 +40,21 @@ export class LaboratoryService {
       laboratory.lab_director = user
     }
 
-    if (company_id) {
-      const company = await this.companyService.findOne(company_id)
+    if (target_company_id) {
+      const company = await this.companyService.findOne(target_company_id);
       if (!company) throw new NotFoundException("Company not found");
-      laboratory.company = company
+      laboratory.company = company;
     }
     return await this.laboratoryRepository.save(laboratory);
   }
 
-  async findAll() {
-    const company_id = this.cls.get<number>('company_id');
+  async findAll(company_id?:number) {
+    const cls_company_id = this.cls.get<number>('company_id');
+    const target_company_id = cls_company_id || company_id;
     console.log("laboratory findall company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
     return await this.laboratoryRepository.find({
-      where: { company: { id: company_id } },
+      where: { company: { id: target_company_id } },
       relations: {
         analysis: true,
         lab_director: true,
@@ -60,61 +63,64 @@ export class LaboratoryService {
     });
   }
 
-  async findAllPagSearch(page: number, limit: number, search?: string) {
+  async findAllPagSearch(page: number, limit: number, search?: string, company_id?: number) {
+    // 1. Qaysi company_id ustuvorligini aniqlaymiz (CLS birinchi o'rinda)
+    const target_company_id = this.cls.get<number>('company_id') || company_id;
 
+    // 2. Pagination qiymatlarini normallashtiramiz
+    const validPage = page > 0 ? page : 1;
+    const validLimit = limit > 0 ? limit : 10;
+    const skip = (validPage - 1) * validLimit;
 
-    const company_id = this.cls.get<number>('company_id');
-
-    page = page > 0 ? page : 1;
-    limit = limit > 0 ? limit : 10;
-
-    const skip = (page - 1) * limit;
-
+    // 3. QueryBuilder ni yaratamiz va asosiy WHERE poydevorini qo'yamiz
     const query = this.laboratoryRepository.createQueryBuilder('laboratory')
       .leftJoinAndSelect('laboratory.analysis', 'analysis')
       .leftJoinAndSelect('laboratory.lab_director', 'lab_director')
       .leftJoinAndSelect('laboratory.lab_assistants', 'lab_assistants')
+      .where('1=1'); // Barcha keyingi if shartlari andWhere bilan xavfsiz bog'lanishi uchun
 
+    // 4. Dinamik filtrlarni faqat andWhere bilan qo'shamiz
     if (search) {
-      query.where(
-        'laboratory.name ILIKE :search', //LIKE MYSQL ILIKE POSTGRESQL
-        { search: `%${search}%` }
-      );
+      query.andWhere('laboratory.name ILIKE :search', { search: `%${search}%` });
     }
 
-    if (company_id) {
-      query.where('laboratory.company_id = :company_id', { company_id: company_id });
+    if (target_company_id) {
+      query.andWhere('laboratory.company_id = :target_company_id', { target_company_id });
     }
 
+    // 5. Ma'lumotlarni bazadan olamiz
     const [data, total] = await query
       .orderBy('laboratory.id', 'DESC')
       .skip(skip)
-      .take(limit)
+      .take(validLimit)
       .getManyAndCount();
 
+    // 6. Standart pagination formatida qaytaramiz
     return {
       meta: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: validPage,
+        limit: validLimit,
+        totalPages: Math.ceil(total / validLimit),
       },
       data,
     };
   }
 
-  // 3. ID bo'yicha bitta laboratoriyani topish
-  async findOne(id: number) {
 
-    const company_id = this.cls.get<number>('company_id');
+  // 3. ID bo'yicha bitta laboratoriyani topish
+  async findOne(id: number,company_id?:number) {
+
+    const cls_company_id = this.cls.get<number>('company_id');
+     const target_company_id = cls_company_id || company_id;
     console.log("laboratory findOne company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
 
 
     const laboratory = await this.laboratoryRepository.findOne({
       where: {
         id: id,
-        company: { id: company_id }
+        company: { id: target_company_id }
       },
       relations: {
         analysis: true,
@@ -135,7 +141,7 @@ export class LaboratoryService {
 
   async update(id: number, updateLaboratoryDto: UpdateLaboratoryDto) {
 
-    const laboratoryCheck = await this.findOne(id);
+    const laboratoryCheck = await this.findOne(id,updateLaboratoryDto.company_id);
 
     const { lab_director_id, ...rest } = updateLaboratoryDto;
 
@@ -174,8 +180,8 @@ export class LaboratoryService {
   //   }
 
 
-  async remove(id: number) {
-    const laboratory = await this.findOne(id);
+  async remove(id: number,company_id?:number) {
+    const laboratory = await this.findOne(id,company_id);
     await this.laboratoryRepository.remove(laboratory);
 
 
@@ -219,7 +225,7 @@ export class LaboratoryService {
     const company_id = this.cls.get<number>('company_id');
     console.log("laboratory removeAssistant company_id");
     console.log(company_id);
-    
+
     const laboratory = await this.laboratoryRepository.findOne({
       where: {
         id: laboratory_id,

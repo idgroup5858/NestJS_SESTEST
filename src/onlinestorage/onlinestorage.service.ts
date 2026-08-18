@@ -22,11 +22,13 @@ export class OnlinestorageService {
 
   // 1. Onlinestorage yaratish (Relation ob'ekt bilan)
   async create(createOnlinestorageDto: CreateOnlinestorageDto) {
-    const company_id = this.cls.get<number>('company_id');
+    const cls_company_id = this.cls.get<number>('company_id');
     console.log("storage create company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
 
-    const { analysis_id, ...rest } = createOnlinestorageDto
+    const target_company_id = cls_company_id || createOnlinestorageDto.company_id;
+
+    const { analysis_id, company_id, ...rest } = createOnlinestorageDto
 
 
 
@@ -39,8 +41,8 @@ export class OnlinestorageService {
       if (!analysis) throw new NotFoundException("Analysis not found");
       onlinestorage.analysis = analysis
     }
-    if (company_id) {
-      const company = await this.companyService.findOne(company_id)
+    if (target_company_id) {
+      const company = await this.companyService.findOne(target_company_id)
       if (!company) throw new NotFoundException("Company not found");
       onlinestorage.company = company;
     }
@@ -49,79 +51,77 @@ export class OnlinestorageService {
   }
 
   // 2. Barcha Onlinestorage'larni ob'ekti bilan birga yuklash
-  async findAll() {
-    const company_id = this.cls.get<number>('company_id');
+  async findAll(company_id?:number) {
+    const cls_company_id = this.cls.get<number>('company_id');
     console.log("storage findall company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
+
+     const target_company_id = cls_company_id || company_id;
 
     return await this.onlinestorageRepository.find({
-      where: { company: { id: company_id } },
+      where: { company: { id: target_company_id } },
       relations: {
         analysis: true
       },
     });
   }
 
-  async findAllPagSearch(
-    page: number,
-    limit: number,
-    search?: string
-  ) {
-    // CLS dan kompaniya ID sini olamiz
-    const company_id = this.cls.get<number>('company_id');
+ async findAllPagSearch(page: number, limit: number, search?: string, company_id?: number) {
+  // 1. Qaysi company_id ustuvorligini aniqlaymiz (CLS birinchi o'rinda)
+  const target_company_id = this.cls.get<number>('company_id') || company_id;
 
-    // Sahifalash (Pagination) default qiymatlarini sozlash
-    page = page > 0 ? page : 1;
-    limit = limit > 0 ? limit : 10;
+  // 2. Pagination qiymatlarini normallashtiramiz
+  const validPage = page > 0 ? page : 1;
+  const validLimit = limit > 0 ? limit : 10;
+  const skip = (validPage - 1) * validLimit;
 
-    const skip = (page - 1) * limit;
+  // 3. QueryBuilder ni yaratamiz va poydevor qo'yamiz
+  const query = this.onlinestorageRepository.createQueryBuilder('onlinestorage')
+    .leftJoinAndSelect('onlinestorage.analysis', 'analysis')
+    .where('1=1'); // Dinamik shartlar xavfsiz bog'lanishi uchun
 
-    // QueryBuilder yaratamiz va bog'langan munosabatlarni yuklaymiz
-    const query = this.onlinestorageRepository.createQueryBuilder('onlinestorage')
-      .leftJoinAndSelect('onlinestorage.analysis', 'analysis')       // Agar userga bog'langan bo'lsa
-    //.leftJoinAndSelect('storage.folder', 'folder');  // Agar papkaga bog'langan bo'lsa
-
-    // DIQQAT: Doimo asosiy majburiy shartni (company_id) birinchi bo'lib WHERE bilan boshlaymiz
-    if (company_id) {
-      query.where('onlinestorage.company_id = :company_id', { company_id });
-    }
-
-    // Qidiruv — fayl nomi yoki tavsifi bo'yicha (ILIKE - registrga qaramasdan qidiradi)
-    if (search) {
-      query.andWhere(
-        '(onlinestorage.name ILIKE :search OR storage.description ILIKE :search)',
-        { search: `%${search}%` },
-      );
-    }
-
-
-
-    // Ma'lumotlarni olish va umumiy sonini hisoblash
-    const [data, total] = await query
-      .orderBy('onlinestorage.createdAt', 'DESC') // Yangi qo'shilganlar birinchi chiqadi
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
-
-    // Standart pagination formati
-    return {
-      meta: {
-        total,
-        page: page,
-        limit: limit,
-        totalPages: Math.ceil(total / limit),
-      },
-      data,
-    };
+  // 4. Kompaniya ID bo'yicha filtr
+  if (target_company_id) {
+    query.andWhere('onlinestorage.company_id = :target_company_id', { target_company_id });
   }
 
+  // 5. Brackets'siz, qavslar ichidagi qidiruv (Search)
+  if (search) {
+    query.andWhere(
+      '(onlinestorage.name ILIKE :search OR analysis.name ILIKE :search)',
+      { search: `%${search}%` }
+    );
+  }
+
+  // 6. Ma'lumotlarni bazadan olish
+  const [data, total] = await query
+    .orderBy('onlinestorage.createdAt', 'DESC')
+    .skip(skip)
+    .take(validLimit)
+    .getManyAndCount();
+
+  // 7. Standart pagination formati
+  return {
+    meta: {
+      total,
+      page: validPage,
+      limit: validLimit,
+      totalPages: Math.ceil(total / validLimit),
+    },
+    data,
+  };
+}
+
+
   // 3. ID bo'yicha olish (Ob'ekti bilan birga)
-  async findOne(id: number): Promise<Onlinestorage> {
-    const company_id = this.cls.get<number>('company_id');
+  async findOne(id: number,company_id?:number): Promise<Onlinestorage> {
+    const cls_company_id = this.cls.get<number>('company_id');
     console.log("storage findone company_id");
-    console.log(company_id);
+    console.log(cls_company_id);
+
+    const target_company_id = cls_company_id || company_id;
     const onlinestorage = await this.onlinestorageRepository.findOne({
-      where: { id, company: { id: company_id } },
+      where: { id, company: { id: target_company_id } },
       relations: {
         // foreignEntity: true // Bog'langan ob'ektni qo'shib yuklaydi
       },
@@ -151,7 +151,7 @@ export class OnlinestorageService {
   // 4. Onlinestorage'ni yangilash (Relation ob'ekt bilan)
   async update(id: number, updateOnlinestorageDto: UpdateOnlinestorageDto) {
     // Avval ushbu IDli ma'lumot borligini tekshiramiz
-    await this.findOne(id);
+    await this.findOne(id,updateOnlinestorageDto.company_id);
 
     // DTO ichidan foreign_id va qolgan ma'lumotlarni ajratib olamiz
     const { analysis_id, ...storageData } = updateOnlinestorageDto
@@ -177,8 +177,8 @@ export class OnlinestorageService {
   }
 
   // 5. Onlinestorage'ni o'chirish
-  async remove(id: number): Promise<void> {
-    const onlinestorage = await this.findOne(id);
+  async remove(id: number,company_id?:number): Promise<void> {
+    const onlinestorage = await this.findOne(id,company_id);
     await this.onlinestorageRepository.remove(onlinestorage);
   }
 }
