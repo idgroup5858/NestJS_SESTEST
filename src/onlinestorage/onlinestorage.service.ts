@@ -60,7 +60,7 @@ export class OnlinestorageService {
     console.log("storage findall company_id");
     console.log(cls_company_id);
 
-     const target_company_id = cls_company_id || company_id;
+     const target_company_id = company_id? company_id:cls_company_id;
 
     return await this.onlinestorageRepository.find({
       where: { company: { id: target_company_id } },
@@ -72,7 +72,8 @@ export class OnlinestorageService {
 
  async findAllPagSearch(page: number, limit: number, search?: string, company_id?: number) {
   // 1. Qaysi company_id ustuvorligini aniqlaymiz (CLS birinchi o'rinda)
-  const target_company_id = this.cls.get<number>('company_id') || company_id;
+  const cls_company_id = this.cls.get<number>('company_id');
+   const target_company_id = company_id? company_id:cls_company_id;
 
   // 2. Pagination qiymatlarini normallashtiramiz
   const validPage = page > 0 ? page : 1;
@@ -123,7 +124,8 @@ export class OnlinestorageService {
     console.log("storage findone company_id");
     console.log(cls_company_id);
 
-    const target_company_id = cls_company_id || company_id;
+  
+   const target_company_id = company_id? company_id:cls_company_id;
     const onlinestorage = await this.onlinestorageRepository.findOne({
       where: { id, company: { id: target_company_id } },
       relations: {
