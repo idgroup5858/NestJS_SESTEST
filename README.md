@@ -112,6 +112,28 @@
 
 
 
+                        DBEAVER da foreign key ni sozlash
+
+                        SELECT setval(pg_get_serial_sequence('"users"', 'id'), COALESCE(max(id), 1)) FROM "users";
+
+                        DO $$
+                            DECLARE
+                                r RECORD;
+                            BEGIN
+                                FOR r IN 
+                                    SELECT table_name, column_name, pg_get_serial_sequence('"' || table_name || '"', column_name) as seq_name
+                                    FROM information_schema.columns 
+                                    WHERE table_schema = 'public' 
+                                    AND column_default LIKE 'nextval%'
+                                LOOP
+                                    IF r.seq_name IS NOT NULL THEN
+                                        EXECUTE format('SELECT setval(%L, COALESCE(max(%I), 1)) FROM %I', r.seq_name, r.column_name, r.table_name);
+                                    END IF;
+                                END LOOP;
+                            END $$;
+
+
+
 
 
 
