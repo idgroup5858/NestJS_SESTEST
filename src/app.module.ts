@@ -51,7 +51,7 @@ import { HistoryModule } from './history/history.module';
     BaseanalysisModule,
     PlanModule,
     SubscriptionModule,
-    HistoryModule,   
+    HistoryModule 
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -54,10 +54,57 @@ export class OrderController {
     @Query('limit') limit: number,
     @Query('search') search: string,
     @Query('status') status: string,
-     @Query('lab_id') lab_id: string,
+    @Query('lab_id') lab_id: string,
   ) {
-    return this.orderService.findAllPagSearchOrderItem(page, limit, search, status,+lab_id);
+    return this.orderService.findAllPagSearchOrderItem(page, limit, search, status, +lab_id);
   }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Get("totalamountrange")
+  findOrderTotalAmountRange(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('payment_method') payment_method?: string,
+    @Query('payment_status') payment_status?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.orderService.findOrderTotalAmountRange(
+      search,
+      status,
+      payment_method,
+      payment_status,
+      startDate,
+      endDate,
+    );
+  }
+
+
+  //   @UseGuards(AuthGuard("jwt"))
+  // @Get("totalamountlaboratory")
+  // findOrderTotalAmountByLaboratoryRange(
+  //   @Query('lab_id') lab_id: string,
+  //   @Query('search') search?: string,
+  //   @Query('status') status?: string,
+  //   @Query('payment_method') payment_method?: string,
+  //   @Query('payment_status') payment_status?: string,
+  //   @Query('startDate') startDate?: string,
+  //   @Query('endDate') endDate?: string,
+  // ) {
+  //   // lab_id raqamga o'tkazilib (+lab_id) service funksiyasiga uzatiladi
+  //   return this.orderService.findOrderTotalAmountByLaboratoryRange(
+  //     +lab_id,
+  //     search,
+  //     status,
+  //     payment_method,
+  //     payment_status,
+  //     startDate,
+  //     endDate,
+  //   );
+  // }
+
+
+
 
   // ================================
   // Bitta order'ni olish
