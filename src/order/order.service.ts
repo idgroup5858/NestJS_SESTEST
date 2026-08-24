@@ -422,24 +422,23 @@ export class OrderService {
 
 
   //RANGE
-
   async findOrderTotalAmountRange(
     search?: string,
     status?: string,
     payment_method?: string,
-    payment_status?: string, // Yangi qo'shilgan filtr
+    payment_status?: string,
     startDate?: string,
     endDate?: string,
-    lab_id?: number, // lab_id endi ixtiyoriy (optional) parametr bo'ldi
+    lab_id?: number,
   ) {
     const company_id = this.cls.get<number>('company_id');
 
     // ==========================================
-    // 1. QUERY BUILDER VA JOINLAR (ENG TEPADA ALOHIDA)
+    // 1. QUERY BUILDER VA JOINLAR
     // ==========================================
     const query = this.orderRepository.createQueryBuilder('order')
       .leftJoin('order.patient', 'patient')
-      .leftJoin('order.items', 'orderitem'); // Hamma holat uchun join tepada tayyor turadi
+      .leftJoin('order.items', 'orderitem');
 
     // ==========================================
     // 2. ASOSIY SHART (1=1 uslubi)
@@ -453,8 +452,6 @@ export class OrderService {
     // ==========================================
     // 3. DINAMIK FILTRLAR
     // ==========================================
-
-    // Laboratoriya bo'yicha filter (Oddiygina andWhere)
     if (lab_id) {
       query.andWhere('orderitem.laboratoryId = :lab_id', { lab_id });
     }
@@ -489,11 +486,20 @@ export class OrderService {
     }
 
     // ==========================================
-    // 4. BAZA DARAJASIDA DISTINCT BILAN SUM
+    // 4. SUBQUERY ORQALI UNIKAL ORDER ID'LARINI AJRATISH
     // ==========================================
-    const result = await query
-      .select('COALESCE(SUM(DISTINCT CAST(order.final_amount AS NUMERIC)), 0)', 'totalFinalAmount')
-      .addSelect('COUNT(DISTINCT order.id)', 'count')
+    const subQuery = query
+      .select('order.id')
+      .groupBy('order.id');
+
+    // ==========================================
+    // 5. YAKUNIY HISOBLASH (XAVFSIZ VA TO'G'RI USUL)
+    // ==========================================
+    const result = await this.orderRepository.createQueryBuilder('o')
+      .select('COALESCE(SUM(CAST(o.final_amount AS NUMERIC)), 0)', 'totalFinalAmount')
+      .addSelect('COUNT(o.id)', 'count')
+      .where(`o.id IN (${subQuery.getQuery()})`)
+      .setParameters(query.getParameters())
       .getRawOne();
 
     return {
@@ -501,6 +507,86 @@ export class OrderService {
       count: parseInt(result.count, 10),
     };
   }
+
+
+  // async findOrderTotalAmountRange(
+  //   search?: string,
+  //   status?: string,
+  //   payment_method?: string,
+  //   payment_status?: string, // Yangi qo'shilgan filtr
+  //   startDate?: string,
+  //   endDate?: string,
+  //   lab_id?: number, // lab_id endi ixtiyoriy (optional) parametr bo'ldi
+  // ) {
+  //   const company_id = this.cls.get<number>('company_id');
+
+  //   // ==========================================
+  //   // 1. QUERY BUILDER VA JOINLAR (ENG TEPADA ALOHIDA)
+  //   // ==========================================
+  //   const query = this.orderRepository.createQueryBuilder('order')
+  //     .leftJoin('order.patient', 'patient')
+  //     .leftJoin('order.items', 'orderitem'); // Hamma holat uchun join tepada tayyor turadi
+
+  //   // ==========================================
+  //   // 2. ASOSIY SHART (1=1 uslubi)
+  //   // ==========================================
+  //   if (company_id) {
+  //     query.where('order.company_id = :company_id', { company_id });
+  //   } else {
+  //     query.where('1=1');
+  //   }
+
+  //   // ==========================================
+  //   // 3. DINAMIK FILTRLAR
+  //   // ==========================================
+
+  //   // Laboratoriya bo'yicha filter (Oddiygina andWhere)
+  //   if (lab_id) {
+  //     query.andWhere('orderitem.laboratoryId = :lab_id', { lab_id });
+  //   }
+
+  //   if (search && search.trim() !== '') {
+  //     query.andWhere(
+  //       '(patient.first_name ILIKE :search OR patient.last_name ILIKE :search OR order.street ILIKE :search OR order.description ILIKE :search)',
+  //       { search: `%${search}%` },
+  //     );
+  //   }
+
+  //   if (status) {
+  //     query.andWhere('order.status = :status', { status });
+  //   }
+
+  //   if (payment_method) {
+  //     query.andWhere('order.payment_method = :payment_method', { payment_method });
+  //   }
+
+  //   if (payment_status) {
+  //     query.andWhere('order.payment_status = :payment_status', { payment_status });
+  //   }
+
+  //   if (startDate && endDate) {
+  //     query.andWhere(
+  //       "order.createdAt BETWEEN :start AND :end",
+  //       {
+  //         start: `${startDate} 00:00:00.000`,
+  //         end: `${endDate} 23:59:59.999`
+  //       }
+  //     );
+  //   }
+
+  //   // ==========================================
+  //   // 4. BAZA DARAJASIDA DISTINCT BILAN SUM
+  //   // ==========================================
+  //   const result = await query
+  //     .select('COALESCE(SUM(DISTINCT CAST(order.final_amount AS NUMERIC)), 0)', 'totalFinalAmount')
+  //     .addSelect('COUNT(DISTINCT order.id)', 'count')
+  //     .getRawOne();
+
+  //   return {
+  //     totalFinalAmount: parseFloat(result.totalFinalAmount),
+  //     count: parseInt(result.count, 10),
+  //   };
+  // }
 
 
   // async findOrderTotalAmountByLaboratoryRange(
