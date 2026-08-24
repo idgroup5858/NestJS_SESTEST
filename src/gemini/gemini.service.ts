@@ -7,6 +7,7 @@ import { LaboratoryService } from 'src/laboratory/laboratory.service';
 import { AnalysisService } from 'src/analysis/analysis.service';
 import { OrderService } from 'src/order/order.service';
 import { PatientService } from 'src/patient/patient.service';
+import { ConfigService } from '@nestjs/config';
 
 
 
@@ -45,19 +46,26 @@ const myTools = {
 @Injectable()
 export class GeminiService {
 
-  private ai = new GoogleGenAI({
-    vertexai: false,
-    apiKey: "AIzaSyB3KqydF5B0Aa7JkrzblJQxcUvlkvTQrLw", // O'zingizning API kalitingizni qo'ying
-  });
-
+   
+   private ai: GoogleGenAI;
   constructor(
     // @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly laboratoryService: LaboratoryService,
     private readonly analysisService: AnalysisService,
     private readonly orderService:OrderService,
-    private readonly patientService:PatientService
-  ) { }
+    private readonly patientService:PatientService,
+     private readonly configService: ConfigService,
+  ) {
+    this.ai = new GoogleGenAI({
+      vertexai: false,
+      apiKey: this.configService.get<string>('GEMINI_API_KEY'),
+    });
+   }
+
+   
+
+  
 
   async create(createGeminiDto: CreateGeminiDto) {
     // Model nomini o'zgarmas o'zgaruvchiga olamiz (ikkala so'rovda ham bir xil bo'lishi shart)
