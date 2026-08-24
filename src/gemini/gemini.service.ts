@@ -47,7 +47,7 @@ export class GeminiService {
 
   private ai = new GoogleGenAI({
     vertexai: false,
-    apiKey: "AIzaSyDXSBeJZkuA_rFjgPUpJ4qpoBwQXy8nNyc", // O'zingizning API kalitingizni qo'ying
+    apiKey: "AIzaSyB3KqydF5B0Aa7JkrzblJQxcUvlkvTQrLw", // O'zingizning API kalitingizni qo'ying
   });
 
   constructor(
