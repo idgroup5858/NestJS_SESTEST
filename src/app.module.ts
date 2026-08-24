@@ -22,6 +22,7 @@ import { BaseanalysisModule } from './baseanalysis/baseanalysis.module';
 import { PlanModule } from './plan/plan.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { HistoryModule } from './history/history.module';
+import { GeminiModule } from './gemini/gemini.module';
 
 
 @Module({
@@ -51,7 +52,8 @@ import { HistoryModule } from './history/history.module';
     BaseanalysisModule,
     PlanModule,
     SubscriptionModule,
-    HistoryModule 
+    HistoryModule,
+    GeminiModule 
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -25,5 +25,6 @@ import { EventModule } from 'src/event/event.module';
   ],
   controllers: [OrderController],
   providers: [OrderService],
+  exports:[OrderService]
 })
 export class OrderModule {}
