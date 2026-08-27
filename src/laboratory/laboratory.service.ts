@@ -113,7 +113,7 @@ export class LaboratoryService {
 
     const cls_company_id = this.cls.get<number>('company_id');
     const target_company_id = company_id ? company_id : cls_company_id;
-      console.log("laboratory findOne company_id");
+    console.log("laboratory findOne company_id");
     console.log(cls_company_id);
 
 
@@ -153,10 +153,13 @@ export class LaboratoryService {
       throw new NotFoundException(`ID: ${id} bo'lgan laboratoriya topilmadi!`);
     }
 
-    if (lab_director_id !== undefined) {
+    if (lab_director_id) {
       const lab = await this.userService.findOne(lab_director_id);
-      laboratory.lab_director = lab
+      laboratory.lab_director = lab;
+    } else if (lab_director_id === null) {
+      laboratory.lab_director = null; // direktorni olib tashlash
     }
+
 
     return this.laboratoryRepository.save(laboratory);
   }

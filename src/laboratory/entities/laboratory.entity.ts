@@ -29,7 +29,7 @@ export class Laboratory {
 
   @ManyToOne(() => User, { onDelete: "SET NULL", nullable: true })
   @JoinColumn({ name: "lab_director_id" })
-  lab_director: User;    // User|null 
+  lab_director: User|null;    // User|null 
 
 
   @ManyToMany(() => User, { nullable: true, onDelete: "CASCADE" })
