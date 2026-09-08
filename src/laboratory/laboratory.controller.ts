@@ -30,16 +30,16 @@ export class LaboratoryController {
     @Query("search") search?: string,
     @Query("company_id") company_id?: string
   ) {
-    return this.laboratoryService.findAllPagSearch(+page, +limit, search,company_id != null ? +company_id : undefined);
+    return this.laboratoryService.findAllPagSearch(+page, +limit, search, company_id != null ? +company_id : undefined);
   }
 
   @UseGuards(AuthGuard("jwt"))
   @Get('getby/:id')
   findOne(
     @Param('id') id: string,
-    @Query("company_id") company_id?: string    
+    @Query("company_id") company_id?: string
   ) {
-    return this.laboratoryService.findOne(+id,company_id != null ? +company_id : undefined);
+    return this.laboratoryService.findOne(+id, company_id != null ? +company_id : undefined);
   }
 
   @UseGuards(AuthGuard("jwt"))
@@ -52,14 +52,14 @@ export class LaboratoryController {
   @Delete('delete/:id')
   remove(
     @Param('id') id: string,
-    @Query("company_id") company_id?: string 
+    @Query("company_id") company_id?: string
   ) {
-    return this.laboratoryService.remove(+id,company_id != null ? +company_id : undefined);
+    return this.laboratoryService.remove(+id, company_id != null ? +company_id : undefined);
   }
 
 
   // Lab assistant qo'shish
-   @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"))
   @Post('assistant/:id/:userId')
   addAssistant(
     @Param('id') id: string,
@@ -69,7 +69,7 @@ export class LaboratoryController {
   }
 
   // Lab assistant olib tashlash
-   @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"))
   @Delete('assistant/:id/:userId')
   removeAssistant(
     @Param('id') id: string,

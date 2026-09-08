@@ -68,6 +68,7 @@ export class OrderController {
     @Query('payment_status') payment_status?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('lab_id') lab_id?: string,
   ) {
     return this.orderService.findOrderTotalAmountRange(
       search,
@@ -76,6 +77,7 @@ export class OrderController {
       payment_status,
       startDate,
       endDate,
+      lab_id ? Number(lab_id) : undefined,
     );
   }
 
