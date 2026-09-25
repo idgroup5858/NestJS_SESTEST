@@ -135,6 +135,54 @@ export class OnlinestorageService {
     return onlinestorage;
   }
 
+
+
+    // 6. Analysis_id va Company_id bo'yicha olish
+  async findByAnalysis(analysis_id: number, company_id?: number) {
+    const cls_company_id = this.cls.get<number>('company_id');
+    const target_company_id = company_id ? company_id : cls_company_id;
+
+    if (!target_company_id) {
+      throw new NotFoundException("Company aniqlanmadi");
+    }
+
+    const data = await this.onlinestorageRepository.find({
+      where: {
+        analysis: { id: analysis_id },
+        company: { id: target_company_id },
+      },
+      relations: {
+        analysis: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return data;
+  }
+
+    // 6. Laboratory_id va Company_id bo'yicha olish
+  // async findByLaboratory(laboratory_id: number, company_id?: number) {
+  //   const cls_company_id = this.cls.get<number>('company_id');
+  //   const target_company_id = company_id ? company_id : cls_company_id;
+
+  //   if (!target_company_id) {
+  //     throw new NotFoundException("Company aniqlanmadi");
+  //   }
+
+  //   const query = this.onlinestorageRepository.createQueryBuilder('onlinestorage')
+  //     .leftJoinAndSelect('onlinestorage.analysis', 'analysis')
+  //     .where('onlinestorage.company_id = :target_company_id', { target_company_id })
+  //     .andWhere('onlinestorage.laboratory_id = :laboratory_id', { laboratory_id });
+
+  //   const data = await query
+  //     .orderBy('onlinestorage.createdAt', 'DESC')
+  //     .getMany();
+
+  //   return data;
+  // }
+
   async findOneWithOutToken(id: number): Promise<Onlinestorage> {
     
     const onlinestorage = await this.onlinestorageRepository.findOne({

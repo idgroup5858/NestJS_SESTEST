@@ -39,7 +39,17 @@ export class OnlinestorageController {
     @Param('id') id: string,
     @Query("company_id") company_id?: string
   ) {
-    return this.onlinestorageService.findOne(+id,company_id != null ? +company_id : undefined);
+    return this.onlinestorageService.findOne(+id, company_id != null ? +company_id : undefined);
+  }
+
+
+  @UseGuards(AuthGuard("jwt"))
+  @Get('getbyanalysis/:analysis_id')
+  findByAnalysis(
+    @Param('analysis_id') analysis_id: string,
+    @Query("company_id") company_id?: string
+  ) {
+    return this.onlinestorageService.findByAnalysis(+analysis_id, company_id != null ? +company_id : undefined);
   }
 
 
