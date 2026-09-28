@@ -2,9 +2,10 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeepPartial } from 'typeorm';
+import { Repository, DeepPartial, Brackets } from 'typeorm';
 import { Patient } from './entities/patient.entity'; // Entity yo'lingizni tekshirib oling
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
@@ -86,7 +87,59 @@ export class PatientService {
     return patient;
   }
 
-  async findAllPagSearch(page: number, limit: number, search?: string) {
+ 
+
+async findAllPagSearch(page: number, limit: number, search?: string) {
+  const company_id = this.cls.get<number>('company_id');
+
+  // Xavfsizlik: company_id bo'lmasa, hamma ma'lumot chiqib ketmasin
+  if (!company_id) {
+    throw new ForbiddenException('Company aniqlanmadi');
+  }
+
+  page = page > 0 ? page : 1;
+  limit = limit > 0 ? limit : 10;
+  const skip = (page - 1) * limit;
+
+  const query = this.patientRepository
+    .createQueryBuilder('patient')
+    .leftJoinAndSelect('patient.district', 'district')
+    .leftJoinAndSelect('patient.owner', 'owner')
+    .leftJoinAndSelect('district.region', 'region')
+    .where('patient.company_id = :company_id', { company_id });
+
+  const cleanSearch = search?.trim();
+  if (cleanSearch) {
+    query.andWhere(
+      new Brackets((qb) => {
+        qb.where('patient.first_name ILIKE :search')
+          .orWhere('patient.last_name ILIKE :search')
+          .orWhere('patient.phone ILIKE :search')
+          .orWhere("CONCAT(patient.last_name, ' ', patient.first_name) ILIKE :search")
+          .orWhere("CONCAT(patient.first_name, ' ', patient.last_name) ILIKE :search")
+          .orWhere('CAST(patient.id AS TEXT) LIKE :exactSearch')
+          .orWhere('CAST(patient.birth_day AS TEXT) LIKE :exactSearch');
+      }),
+      {
+        search: `%${cleanSearch}%`,
+        exactSearch: `${cleanSearch}%`,
+      },
+    );
+  }
+
+  const [data, total] = await query
+    .orderBy('patient.id', 'DESC')
+    .skip(skip)
+    .take(limit)
+    .getManyAndCount();
+
+  return {
+    meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    data,
+  };
+}
+
+  async findAllPagSearchOld(page: number, limit: number, search?: string) {
     const company_id = this.cls.get<number>('company_id');
 
     page = page > 0 ? page : 1;
