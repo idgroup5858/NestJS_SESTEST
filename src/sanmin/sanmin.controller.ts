@@ -31,6 +31,24 @@ export class SanminController {
     return this.sanminService.findAllPagSearch(+page, +limit, search);
   }
 
+  @UseGuards(AuthGuard("jwt"))
+  @Get("totalamountrange")
+  findSanminTotalAmountRange(
+    @Query('search') search?: string,
+    @Query('payment_method') payment_method?: string,
+    @Query('payment_status') payment_status?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.sanminService.findSanminTotalAmountRange(
+      search,
+      payment_method,
+      payment_status,
+      startDate,
+      endDate,
+    );
+  }
+
 
   @UseGuards(AuthGuard("jwt"))
   @Get('getby/:id')

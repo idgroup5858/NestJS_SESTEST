@@ -95,6 +95,61 @@ export class SanminService {
   }
 
 
+    async findSanminTotalAmountRange(
+    search?: string,
+    payment_method?: string,
+    payment_status?: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const company_id = this.cls.get<number>('company_id');
+
+    const query = this.sanminRepository.createQueryBuilder('sanmin');
+
+    if (company_id) {
+      query.where('sanmin.company_id = :company_id', { company_id });
+    } else {
+      query.where('1=1');
+    }
+
+    if (search && search.trim() !== '') {
+      query.andWhere(
+        '(sanmin.name ILIKE :search OR sanmin.phone ILIKE :search OR sanmin.workplace ILIKE :search OR sanmin.description ILIKE :search)',
+        { search: `%${search.trim()}%` },
+      );
+    }
+
+    if (payment_method) {
+      query.andWhere('sanmin.payment_method = :payment_method', { payment_method });
+    }
+
+    if (payment_status) {
+      query.andWhere('sanmin.payment_status = :payment_status', { payment_status });
+    }
+
+    if (startDate && endDate) {
+      query.andWhere(
+        'sanmin.createdAt BETWEEN :start AND :end',
+        {
+          start: `${startDate} 00:00:00.000`,
+          end: `${endDate} 23:59:59.999`,
+        },
+      );
+    }
+
+    const result = await query
+      .select("COALESCE(SUM(CAST(NULLIF(sanmin.price, '') AS NUMERIC)), 0)", 'totalAmount')
+      .addSelect('COUNT(sanmin.id)', 'count')
+      .getRawOne();
+
+    return {
+      totalAmount: parseFloat(result.totalAmount),
+      count: parseInt(result.count, 10),
+    };
+  }
+
+
+
   async findOne(id: number): Promise<Sanmin> {
     const company_id = this.cls.get<number>('company_id');
     console.log("sanmin  findOne company_id");

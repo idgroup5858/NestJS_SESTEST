@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsNotEmpty, IsNumberString, IsOptional, IsString } from "class-validator";
 
 export class CreateSanminDto {
 
@@ -21,6 +21,6 @@ export class CreateSanminDto {
     payment_status?: string;
 
 
-    @IsOptional() @IsString()
+    @IsOptional() @IsNumberString()
     price?: string;
 }
