@@ -23,6 +23,7 @@ import { PlanModule } from './plan/plan.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { HistoryModule } from './history/history.module';
 import { GeminiModule } from './gemini/gemini.module';
+import { SanminModule } from './sanmin/sanmin.module';
 
 
 @Module({
@@ -53,7 +54,8 @@ import { GeminiModule } from './gemini/gemini.module';
     PlanModule,
     SubscriptionModule,
     HistoryModule,
-    GeminiModule 
+    GeminiModule,
+    SanminModule 
   ],
   controllers: [AppController],
   providers: [AppService],
