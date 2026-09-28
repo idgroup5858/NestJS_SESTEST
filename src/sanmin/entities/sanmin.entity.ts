@@ -18,11 +18,15 @@ export class Sanmin {
     @Column()
     phone: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     workplace: string;
 
     @Column({ nullable: true })
     payment_method: string;
+
+    @Column({ nullable: true })
+    payment_status: string;
+
 
     @Column({ nullable: true })
     price: string;

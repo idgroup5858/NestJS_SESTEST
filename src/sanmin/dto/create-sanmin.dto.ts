@@ -18,5 +18,9 @@ export class CreateSanminDto {
     payment_method?: string;
 
     @IsOptional() @IsString()
+    payment_status?: string;
+
+
+    @IsOptional() @IsString()
     price?: string;
 }
