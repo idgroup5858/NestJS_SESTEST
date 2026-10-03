@@ -24,6 +24,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { HistoryModule } from './history/history.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { SanminModule } from './sanmin/sanmin.module';
+import { DealModule } from './deal/deal.module';
 
 
 @Module({
@@ -55,7 +56,8 @@ import { SanminModule } from './sanmin/sanmin.module';
     SubscriptionModule,
     HistoryModule,
     GeminiModule,
-    SanminModule 
+    SanminModule,
+    DealModule 
   ],
   controllers: [AppController],
   providers: [AppService],
