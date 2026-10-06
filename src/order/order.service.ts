@@ -4,7 +4,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order_item.entity';
-import { Repository } from 'typeorm';
+import { ObjectLiteral, Repository, SelectQueryBuilder } from 'typeorm';
 import { Analysis } from 'src/analysis/entities/analysis.entity';
 import { Laboratory } from 'src/laboratory/entities/laboratory.entity';
 import { PatientService } from 'src/patient/patient.service';
@@ -108,6 +108,7 @@ export class OrderService {
       const item = new OrderItem();
       item.analysis = { id: itemDto.analysis_id } as Analysis;
       item.laboratory = { id: itemDto.laboratory_id } as Laboratory;
+      item.price = itemDto.price.toString();
       item.status = 'pending';
       return item;
     });
@@ -422,91 +423,107 @@ export class OrderService {
 
 
   //RANGE
+  // lab_id berilmasa — orderlar soni va final_amount yig'indisi
+  // lab_id berilsa  — shu labga tegishli analizlar (order_item) soni va summasi
   async findOrderTotalAmountRange(
-  search?: string,
-  status?: string,
-  payment_method?: string,
-  payment_status?: string,
-  startDate?: string,
-  endDate?: string,
-  lab_id?: number,
-) {
-  const company_id = this.cls.get<number>('company_id');
+    search?: string,
+    status?: string,
+    payment_method?: string,
+    payment_status?: string,
+    startDate?: string,
+    endDate?: string,
+    lab_id?: number,
+  ) {
+    const company_id = this.cls.get<number>('company_id');
 
-  // ==========================================
-  // 1. QUERY BUILDER VA JOINLAR
-  // ==========================================
-  const query = this.orderRepository.createQueryBuilder('order')
-    .leftJoin('order.patient', 'patient')
-    .leftJoin('order.items', 'orderitem');
+    // ==========================================
+    // 1. QUERY BUILDER VA JOINLAR
+    // ==========================================
+    // lab_id bo'lsa order_item'dan sanaymiz: bitta order ichida bir nechta
+    // labning analizi bo'lishi mumkin, shuning uchun order emas, analiz sanaladi
+    const query: SelectQueryBuilder<ObjectLiteral> = lab_id
+      ? this.orderItemRepository.createQueryBuilder('item')
+        .innerJoin('item.order', 'order')
+        .leftJoin('item.analysis', 'analysis')
+        .leftJoin('order.patient', 'patient')
+        .where('item.laboratoryId = :lab_id', { lab_id })
+      : this.orderRepository.createQueryBuilder('order')
+        .leftJoin('order.patient', 'patient');
 
-  // ==========================================
-  // 2. ASOSIY SHART (1=1 uslubi)
-  // ==========================================
-  if (company_id) {
-    query.where('order.company_id = :company_id', { company_id });
-  } else {
-    query.where('1=1');
+    // ==========================================
+    // 2. DINAMIK FILTRLAR
+    // ==========================================
+    if (company_id) {
+      query.andWhere('order.company_id = :company_id', { company_id });
+    }
+
+    if (search && search.trim() !== '') {
+      query.andWhere(
+        '(patient.first_name ILIKE :search OR patient.last_name ILIKE :search OR order.street ILIKE :search OR order.description ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    if (status) {
+      query.andWhere('order.status = :status', { status });
+    }
+
+    if (payment_method) {
+      query.andWhere('order.payment_method = :payment_method', { payment_method });
+    }
+
+    if (payment_status) {
+      query.andWhere('order.payment_status = :payment_status', { payment_status });
+    }
+
+    if (startDate && endDate) {
+      query.andWhere(
+        "order.createdAt BETWEEN :start AND :end",
+        {
+          start: `${startDate} 00:00:00.000`,
+          end: `${endDate} 23:59:59.999`
+        }
+      );
+    }
+
+    // ==========================================
+    // 3. UMUMIY HISOB (lab_id yo'q)
+    // ==========================================
+    if (!lab_id) {
+      const result = await query
+        .select('COALESCE(SUM(CAST(order.final_amount AS NUMERIC)), 0)', 'totalFinalAmount')
+        .addSelect('COUNT(order.id)', 'count')
+        .getRawOne();
+
+      return {
+        totalFinalAmount: parseFloat(result.totalFinalAmount),
+        count: parseInt(result.count, 10),
+      };
+    }
+
+    // ==========================================
+    // 4. LAB BO'YICHA HISOB
+    // ==========================================
+    // Eski order_item'larda price saqlanmagan — ularda analizning hozirgi narxi olinadi.
+    // analysis.price validatsiyasiz string, shuning uchun faqat son bo'lsagina CAST qilinadi
+    const itemPrice = `COALESCE(CAST(NULLIF(item.price, '') AS NUMERIC), CASE WHEN analysis.price ~ '^[0-9]+(\\.[0-9]+)?$' THEN CAST(analysis.price AS NUMERIC) END, 0)`;
+    // Order chegirmasi analizlarga narxiga mutanosib taqsimlanadi (final_amount / total_amount)
+    const discountRatio = `COALESCE(CAST(NULLIF(order.final_amount, '') AS NUMERIC) / NULLIF(CAST(NULLIF(order.total_amount, '') AS NUMERIC), 0), 1)`;
+
+    const result = await query
+      .select(`COALESCE(ROUND(SUM(${itemPrice} * ${discountRatio}), 2), 0)`, 'totalFinalAmount')
+      .addSelect(`COALESCE(SUM(${itemPrice}), 0)`, 'totalAmount')
+      .addSelect('COUNT(item.id)', 'count')
+      .addSelect('COUNT(DISTINCT order.id)', 'orderCount')
+      .getRawOne();
+
+    return {
+      totalFinalAmount: parseFloat(result.totalFinalAmount), // chegirma ayirilgan summa
+      totalAmount: parseFloat(result.totalAmount),           // chegirmasiz summa
+      count: parseInt(result.count, 10),                     // shu lab analizlari soni
+      orderCount: parseInt(result.orderCount, 10),           // shu lab analizi bor orderlar soni
+    };
   }
-
-  // ==========================================
-  // 3. DINAMIK FILTRLAR
-  // ==========================================
-  if (lab_id) {
-    query.andWhere('orderitem.laboratoryId = :lab_id', { lab_id });
-  }
-
-  if (search && search.trim() !== '') {
-    query.andWhere(
-      '(patient.first_name ILIKE :search OR patient.last_name ILIKE :search OR order.street ILIKE :search OR order.description ILIKE :search)',
-      { search: `%${search}%` },
-    );
-  }
-
-  if (status) {
-    query.andWhere('order.status = :status', { status });
-  }
-
-  if (payment_method) {
-    query.andWhere('order.payment_method = :payment_method', { payment_method });
-  }
-
-  if (payment_status) {
-    query.andWhere('order.payment_status = :payment_status', { payment_status });
-  }
-
-  if (startDate && endDate) {
-    query.andWhere(
-      "order.createdAt BETWEEN :start AND :end",
-      { 
-        start: `${startDate} 00:00:00.000`, 
-        end: `${endDate} 23:59:59.999` 
-      }
-    );
-  }
-
-  // ==========================================
-  // 4. SUBQUERY ORQALI UNIKAL ORDER ID'LARINI AJRATISH
-  // ==========================================
-  const subQuery = query
-    .select('order.id')
-    .groupBy('order.id');
-
-  // ==========================================
-  // 5. YAKUNIY HISOBLASH (XAVFSIZ VA TO'G'RI USUL)
-  // ==========================================
-  const result = await this.orderRepository.createQueryBuilder('o')
-    .select('COALESCE(SUM(CAST(o.final_amount AS NUMERIC)), 0)', 'totalFinalAmount')
-    .addSelect('COUNT(o.id)', 'count')
-    .where(`o.id IN (${subQuery.getQuery()})`)
-    .setParameters(query.getParameters())
-    .getRawOne();
-
-  return {
-    totalFinalAmount: parseFloat(result.totalFinalAmount),
-    count: parseInt(result.count, 10),
-  };
-}
 
 
   // async findOrderTotalAmountRange(
@@ -835,6 +852,7 @@ export class OrderService {
         const item = new OrderItem();
         item.analysis = { id: itemDto.analysis_id } as Analysis;
         item.laboratory = { id: itemDto.laboratory_id } as Laboratory;
+        item.price = itemDto.price.toString();
         item.status = 'pending';
         return item;
       });

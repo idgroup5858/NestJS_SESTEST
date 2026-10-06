@@ -24,6 +24,11 @@ export class OrderItem {
     @ManyToOne(() => Laboratory)
     laboratory: Laboratory;
 
+    // Order yaratilgan paytdagi analiz narxi (chegirmasiz)
+    // Eski yozuvlarda bo'sh — statistikada analysis.price olinadi
+    @Column({ nullable: true })
+    price: string;
+
     // Analizning hozirgi holati
     @Column({ default: 'pending' })
     status: string; // 'pending' (kutilmoqda), 'in_progress' (jarayonda), 'completed' (tayyor)
